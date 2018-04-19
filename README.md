@@ -387,3 +387,4 @@ Copyright &copy; 2012-2017 `leveldown` [contributors](https://github.com/level/c
 *`leveldown` builds on the excellent work of the LevelDB and Snappy teams from Google and additional contributors. LevelDB and Snappy are both issued under the [New BSD Licence](http://opensource.org/licenses/BSD-3-Clause).*
 
 [level-badge]: http://leveldb.org/img/badge.svg
+
