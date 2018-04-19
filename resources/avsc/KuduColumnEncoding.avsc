@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "KuduColumnEncoding",
+  "namespace" : "org.kududown.avro",
+  "symbols" : [ "AUTO_ENCODING", "PLAIN_ENCODING", "RLE", "DICT_ENCODING", "BIT_SHUFFLE", "PREFIX_ENCODING" ]
+}

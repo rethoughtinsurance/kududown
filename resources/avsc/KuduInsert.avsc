@@ -1,0 +1,53 @@
+{
+  "type" : "record",
+  "name" : "KuduInsert",
+  "namespace" : "org.kududown.avro",
+  "fields" : [ {
+    "name" : "op",
+    "type" : {
+      "type" : "record",
+      "name" : "KuduOperation",
+      "fields" : [ {
+        "name" : "id",
+        "type" : "string"
+      }, {
+        "name" : "operationType",
+        "type" : {
+          "type" : "enum",
+          "name" : "KuduOperationType",
+          "symbols" : [ "SCAN", "INSERT", "DELETE" ]
+        }
+      } ]
+    }
+  }, {
+    "name" : "tableName",
+    "type" : "string"
+  }, {
+    "name" : "row",
+    "type" : {
+      "type" : "record",
+      "name" : "KuduRow",
+      "fields" : [ {
+        "name" : "values",
+        "type" : {
+          "type" : "array",
+          "items" : {
+            "type" : "record",
+            "name" : "KuduDataValue",
+            "fields" : [ {
+              "name" : "dataType",
+              "type" : {
+                "type" : "enum",
+                "name" : "KuduDataType",
+                "symbols" : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
+              }
+            }, {
+              "name" : "value",
+              "type" : [ "null", "string", "bytes" ]
+            } ]
+          }
+        }
+      } ]
+    }
+  } ]
+}

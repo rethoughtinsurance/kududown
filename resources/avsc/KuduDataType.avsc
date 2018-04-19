@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "KuduDataType",
+  "namespace" : "org.kududown.avro",
+  "symbols" : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
+}

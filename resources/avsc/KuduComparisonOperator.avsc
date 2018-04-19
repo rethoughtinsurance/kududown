@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "KuduComparisonOperator",
+  "namespace" : "org.kududown.avro",
+  "symbols" : [ "EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "IS_NULL", "IS_NOT_NULL" ]
+}

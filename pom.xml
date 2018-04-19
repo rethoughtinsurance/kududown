@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.kududown</groupId>
+  <artifactId>kududown</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>rt-schema</name>
+  <packaging>pom</packaging>
+
+  <url>http://maven.apache.org</url>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.easytesting</groupId>
+      <artifactId>fest-assert</artifactId>
+      <version>1.4</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.avro/avro -->
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.8.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro-compiler</artifactId>
+      <version>1.8.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>1.6.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.maven</groupId>
+          <artifactId>maven-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <executions>
+          <execution>
+            <!-- Generate avsc files in typescript module as well -->
+            <id>avro-idl-to-avsc-kududown-schema-interfaces</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>java</executable>
+              <arguments>
+                <argument>-jar</argument>
+                <argument>${basedir}/resources/java/lib/avro-tools-1.8.2.jar</argument>
+                <argument>idl2schemata</argument>
+                <argument>${basedir}/resources/avdl/kududown-schema.avdl</argument>
+                <argument>${basedir}/resources/avsc/</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+</project>

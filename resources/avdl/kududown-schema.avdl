@@ -1,0 +1,89 @@
+@namespace("org.kududown.avro")
+protocol KuduDownSchema {
+
+  enum KuduOperationType {
+    SCAN, INSERT, DELETE
+  }
+
+  record KuduOperation {
+    string id;
+    KuduOperationType operationType;
+  }
+
+  enum KuduComparisonOperator {
+    EQUAL,
+    GREATER,
+    GREATER_EQUAL, // For numeric or String 'LIKE' comparisons
+    LESS,
+    LESS_EQUAL,
+    IS_NULL,
+    IS_NOT_NULL
+  }
+
+  enum KuduDataType {
+    BOOLEAN,
+    INT8,
+    INT16,
+    INT32,
+    INT64,
+    UNIXTIME64,
+    FLOAT32,
+    FLOAT64,
+    DECIMAL,
+    STRING,
+    BINARY
+  }
+
+  enum KuduColumnEncoding {
+    AUTO_ENCODING,
+    PLAIN_ENCODING,
+    RLE,
+    DICT_ENCODING,
+    BIT_SHUFFLE,
+    PREFIX_ENCODING
+  }
+
+  record KuduColumnDef {
+    string columnName;
+    KuduDataType dataType;
+    boolean allowNull;
+    union {null,KuduColumnEncoding} encoding;
+    boolean isPrimaryKey;
+  }
+
+  record KuduDataValue {
+    // Only stringValue is for now, they are converted in the Kudu interface
+    KuduDataType dataType;
+    union {null,string,bytes} value;
+  }
+
+  record KuduPredicate {
+    string columnName;
+    KuduDataType dataType;
+    KuduComparisonOperator operator;
+    KuduDataValue dataValue;
+  }
+
+  record KuduScan {
+    KuduOperation op;
+    string tableName;
+    array<KuduPredicate> predicateList;
+  }
+
+  record KuduRow {
+    array<KuduDataValue> values;
+  }
+
+  record KuduScanResult {
+    string scanId;
+    array<KuduRow> rows;
+  }
+
+  record KuduInsert {
+    KuduOperation op;
+    string tableName;
+    KuduRow row;
+  }
+
+
+}

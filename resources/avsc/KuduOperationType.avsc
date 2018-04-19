@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "KuduOperationType",
+  "namespace" : "org.kududown.avro",
+  "symbols" : [ "SCAN", "INSERT", "DELETE" ]
+}

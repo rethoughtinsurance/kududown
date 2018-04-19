@@ -1,0 +1,16 @@
+{
+  "type" : "record",
+  "name" : "KuduOperation",
+  "namespace" : "org.kududown.avro",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "string"
+  }, {
+    "name" : "operationType",
+    "type" : {
+      "type" : "enum",
+      "name" : "KuduOperationType",
+      "symbols" : [ "SCAN", "INSERT", "DELETE" ]
+    }
+  } ]
+}
