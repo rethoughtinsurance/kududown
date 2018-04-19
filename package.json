@@ -1,41 +1,32 @@
 {
-  "name": "leveldown",
-  "description": "A low-level Node.js LevelDB binding",
+  "name": "kududown",
+  "description": "A low-level Node.js Kudu binding",
   "version": "3.0.0",
   "contributors": [
-    "Rod Vagg <r@va.gg> (https://github.com/rvagg)",
-    "John Chesley <john@chesl.es> (https://github.com/chesles/)",
-    "Jake Verbaten <raynos2@gmail.com> (https://github.com/raynos)",
-    "Dominic Tarr <dominic.tarr@gmail.com> (https://github.com/dominictarr)",
-    "Max Ogden <max@maxogden.com> (https://github.com/maxogden)",
-    "Lars-Magnus Skog <ralphtheninja@riseup.net> (https://github.com/ralphtheninja)",
-    "David Björklund <david.bjorklund@gmail.com> (https://github.com/kesla)",
-    "Julian Gruber <julian@juliangruber.com> (https://github.com/juliangruber)",
-    "Paolo Fragomeni <paolo@async.ly> (https://github.com/hij1nx)",
-    "Anton Whalley <anton.whalley@nearform.com> (https://github.com/No9)",
-    "Matteo Collina <matteo.collina@gmail.com> (https://github.com/mcollina)",
-    "Pedro Teixeira <pedro.teixeira@gmail.com> (https://github.com/pgte)",
-    "James Halliday <mail@substack.net> (https://github.com/substack)",
-    "Gordon Hall <gordonh@member.fsf.org> (https://github.com/bookchin)",
-    "Yichao 'Peak' Ji <peakji@gmail.com> (https://github.com/peakji)",
-    "Meirion Hughes <crakinshot@yahoo.com> (https://github.com/meirionhughes)"
+    "Cory Isaacson <cory.isaacson@rethoughtinsurance.com>",
+    "Janet Borschowa <janet.borschowa@rethoughtinsurance.com>",
+    "and many others who contributed to leveldown"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/level/leveldown.git"
+    "url": "https://github.com/rethoughtinsurance/kududown"
   },
-  "homepage": "https://github.com/level/leveldown",
+  "homepage": "https://github.com/rethoughtinsurance/kududown",
   "keywords": [
     "leveldb",
-    "level"
+    "level",
+    "kudu"
   ],
-  "main": "leveldown.js",
-  "typings": "leveldown.d.ts",
+  "main": "kududown.js",
+  "typings": "kududown.d.ts",
   "dependencies": {
     "abstract-leveldown": "~4.0.0",
     "bindings": "~1.3.0",
+    "chai": "^4.1.2",
     "fast-future": "~1.0.2",
+    "mocha": "^5.1.1",
     "nan": "~2.8.0",
+    "ng2-logger": "^2.0.35",
     "prebuild-install": "^2.1.0"
   },
   "devDependencies": {
@@ -64,7 +55,7 @@
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --all --strip --verbose"
   },
-  "license": "MIT",
+  "license": "MIT,Apache 2.0 (for Kudu client)",
   "gypfile": true,
   "engines": {
     "node": ">=4"

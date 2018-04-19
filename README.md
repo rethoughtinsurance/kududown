@@ -1,5 +1,42 @@
-leveldown
+kududown
 =========
+
+## Introduction
+This project is an adaptation of the `leveldown` API for Apache Kudu. Apache Kudu is
+a column store, and has some characteristics of a key-value store with sortable keys,
+as well as a columnar structure more like a traditional relational database. For example,
+Kudu has multiple tables, but it can also search keys in an ordered manner based on the
+primary key of a given table.
+
+This implementation adapts specialized Avro data types to fit basic Kudu capabilities
+into the key-value structure of a `leveldown` engine. These are all `KuduOperation`
+types that provide the data required to perform Kudu operations, in a way that is
+natural for Kudu, and as close to a key-value paradigm as is deemed sensible.
+
+Here is a brief summary of the proposed API (from a `levelup` user standpoint):
+
+```
+// Initialize a database connection to a Kudu instance.
+const db = levelup(kududown('host:port'));
+
+// A Kudu scan operation is used for any query, if a scan with the `get` method
+// returns more than a single row an error is returned.
+let myValue = db.get(mySingleRowKuduScanOp);
+
+// The `gte` option is used for all scan operations for a reader, even though it
+// can contain any type of predicate. It can access any table with any number of
+// predicates.
+const rs = db.createStreamReader({key: false, value: true, gte: myMultiRowKuduScanOp});
+
+// Put a row into the database. The KUDU_KEY is a placeholder that is ignored, the
+// entire row is included in the 'value' argument of the `put` method.
+db.put(KUDU_KEY, myKuduInsert);
+
+```
+
+==========
+
+
 
 [![level badge][level-badge]](https://github.com/level/awesome)
 [![npm](https://img.shields.io/npm/v/leveldown.svg)](https://www.npmjs.com/package/leveldown)

@@ -2,15 +2,16 @@ import { AbstractLevelDOWN, AbstractIteratorOptions, AbstractIterator } from 'ab
 
 type BaseType = string | Buffer
 
-export interface LevelDown
-  extends LevelDownConstructor, AbstractLevelDOWN<
+export interface KuduDown
+  extends KuduDownConstructor, AbstractLevelDOWN<
   BaseType, BaseType,
-  LevelDownOptions,
-  LevelDownPutOptions,
-  LevelDownGetOptions,
-  LevelDownDeleteOptions,
-  LevelDownIteratorOptions,
-  LevelDownBatchOptions> {
+  KuduDownOptions,
+  KuduDownPutOptions,
+  KuduDownGetOptions,
+  KuduDownDeleteOptions,
+  KuduDownIteratorOptions,
+  KuduDownBatchOptions
+  > {
 
   approximateSize(start: BaseType, end: BaseType, cb: (err: any, size: number) => void): void;
   compactRange(start: BaseType, end: BaseType, cb: (err?: any) => void): void;
@@ -18,51 +19,51 @@ export interface LevelDown
   destroy(location: string, cb: (err?: any) => void): void;
   repair(location: string, cb: (err?: any) => void): void;
 
-  iterator(options?: LevelDownIteratorOptions & AbstractIteratorOptions<BaseType>): LevelDownIterator
+  iterator(options?: KuduDownIteratorOptions & AbstractIteratorOptions<BaseType>): KuduDownIterator
 }
 
-interface LevelDownConstructor {
-  new (location: string): LevelDown
-  (location: string): LevelDown
+interface KuduDownConstructor {
+  new (location: string): KuduDown
+  (location: string): KuduDown
 }
 
-export interface LevelDownOptions {
-  createIfMissing?: boolean;
-  errorIfExists?: boolean;
-  compression?: boolean;
-  cacheSize?: number;
-  writeBufferSize?: number;
-  blockSize?: number;
-  maxOpenFiles?: number;
-  blockRestartInterval?: number;
-  maxFileSize?: number;
+export interface KuduDownOptions {
+  // createIfMissing?: boolean;
+  // errorIfExists?: boolean;
+  // compression?: boolean;
+  // cacheSize?: number;
+  // writeBufferSize?: number;
+  // blockSize?: number;
+  // maxOpenFiles?: number;
+  // blockRestartInterval?: number;
+  // maxFileSize?: number;
 }
 
-export interface LevelDownPutOptions {
+export interface KuduDownPutOptions {
   sync?: boolean
 }
 
-export interface LevelDownGetOptions {
-  fillCache?: boolean;
-  asBuffer?: boolean;
+export interface KuduDownGetOptions {
+  // fillCache?: boolean;
+  // asBuffer?: boolean;
 }
 
-export interface LevelDownDeleteOptions {
-  sync?: boolean;
+export interface KuduDownDeleteOptions {
+  // sync?: boolean;
 }
 
-export interface LevelDownIteratorOptions {
-  fillCache?: boolean;
+export interface KuduDownIteratorOptions {
+//  fillCache?: boolean;
 
   keyAsBuffer?: boolean;
   valueAsBuffer?: boolean;
 }
 
-export interface LevelDownBatchOptions {
-  sync?: boolean;
+export interface KuduDownBatchOptions {
+  // sync?: boolean;
 }
 
-export interface LevelDownIterator extends AbstractIterator<BaseType, BaseType> {
+export interface KuduDownIterator extends AbstractIterator<BaseType, BaseType> {
   seek(key: BaseType): void;
   binding: any;
   cache: any;
@@ -70,5 +71,5 @@ export interface LevelDownIterator extends AbstractIterator<BaseType, BaseType> 
   fastFuture: any;
 }
 
-declare const LevelDown: LevelDownConstructor
-export default LevelDown;
+declare const KuduDown: KuduDownConstructor
+export default KuduDown;
