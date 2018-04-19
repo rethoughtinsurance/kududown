@@ -58,8 +58,7 @@ protocol KuduDownSchema {
   }
 
   record KuduPredicate {
-    string columnName;
-    KuduDataType dataType;
+    KuduColumnDef column;
     KuduComparisonOperator operator;
     KuduDataValue dataValue;
   }
@@ -82,6 +81,7 @@ protocol KuduDownSchema {
   record KuduInsert {
     KuduOperation op;
     string tableName;
+    array<KuduColumnDef> columns;
     KuduRow row;
   }
 
