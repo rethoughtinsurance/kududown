@@ -6,8 +6,8 @@
  */
 
 
-#ifndef LD_LEVELDOWN_H
-#define LD_LEVELDOWN_H
+#ifndef __kududown_h__
+#define __kududown_h__
 
 #include <node.h>
 #include <node_buffer.h>
