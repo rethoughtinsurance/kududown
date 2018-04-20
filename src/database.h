@@ -100,8 +100,8 @@ namespace leveldown {
 
   private:
     Nan::Utf8String* location;
-    void* db;
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
+    kudu::client::sp::shared_ptr<kudu::client::KuduTable> table;
 
     uint32_t currentIteratorId;
     void (*pendingCloseWorker);
