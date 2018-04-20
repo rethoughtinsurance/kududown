@@ -17,7 +17,7 @@
     "level",
     "kudu"
   ],
-  "main": "ts/lib/index.js",
+  "main": "index.js",
   "typings": "leveldown.d.ts",
   "dependencies": {
     "abstract-leveldown": "~4.0.0",
@@ -59,7 +59,7 @@
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --all --strip --verbose"
   },
-  "license": "MIT,Apache 2.0 (for Kudu client)",
+  "license": "SEE LICENSE IN LICENSE",
   "gypfile": true,
   "engines": {
     "node": ">=4"

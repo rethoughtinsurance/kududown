@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "outDir": "./ts/lib/",
+    "outDir": ".",
     "strict": true,
     "typeRoots": [
       "node_modules/@types"
