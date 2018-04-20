@@ -37,11 +37,9 @@
               ]
           }]
         ]
-      , "dependencies": [
-            "<(module_root_dir)/deps/leveldb/leveldb.gyp:leveldb"
-        ]
       , "include_dirs"  : [
-            "<!(node -e \"require('nan')\")"
+            "<!(node -e \"require('nan')\")",
+            "deps/kudu/linux/include"
         ]
       , "sources": [
             "src/batch.cc"
@@ -50,8 +48,8 @@
           , "src/database_async.cc"
           , "src/iterator.cc"
           , "src/iterator_async.cc"
-          , "src/leveldown.cc"
-          , "src/leveldown_async.cc"
+          , "src/kududown.cc"
+          , "src/kududown_async.cc"
         ]
     }]
 }

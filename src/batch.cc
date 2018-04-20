@@ -11,20 +11,20 @@ namespace leveldown {
 
 static Nan::Persistent<v8::FunctionTemplate> batch_constructor;
 
-Batch::Batch (leveldown::Database* database, bool sync) : database(database) {
-  options = new leveldb::WriteOptions();
-  options->sync = sync;
-  batch = new leveldb::WriteBatch();
-  hasData = false;
+Batch::Batch(/*leveldown::Database* database, bool sync) : database(database*/) {
+//  options = new leveldb::WriteOptions();
+//  options->sync = sync;
+//  batch = new leveldb::WriteBatch();
+//  hasData = false;
 }
 
 Batch::~Batch () {
-  delete options;
-  delete batch;
+//  delete options;
+//  delete batch;
 }
 
-leveldb::Status Batch::Write () {
-  return database->WriteBatchToDatabase(options, batch);
+kudu::Status Batch::Write () {
+  return kudu::Status();// database->WriteBatchToDatabase(options, batch);
 }
 
 void Batch::Init () {
@@ -48,7 +48,7 @@ NAN_METHOD(Batch::New) {
 
   bool sync = BooleanOptionValue(optionsObj, "sync");
 
-  Batch* batch = new Batch(database, sync);
+  Batch* batch = new Batch(/*database, sync*/);
   batch->Wrap(info.This());
 
   info.GetReturnValue().Set(info.This());
@@ -88,15 +88,15 @@ NAN_METHOD(Batch::Put) {
 
   v8::Local<v8::Value> keyBuffer = info[0];
   v8::Local<v8::Value> valueBuffer = info[1];
-  LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
-  LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
+  //LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+  //LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
 
-  batch->batch->Put(key, value);
-  if (!batch->hasData)
-    batch->hasData = true;
+//  batch->batch->Put(key, value);
+//  if (!batch->hasData)
+//    batch->hasData = true;
 
-  DisposeStringOrBufferFromSlice(keyBuffer, key);
-  DisposeStringOrBufferFromSlice(valueBuffer, value);
+  //DisposeStringOrBufferFromSlice(keyBuffer, key);
+  //DisposeStringOrBufferFromSlice(valueBuffer, value);
 
   info.GetReturnValue().Set(info.Holder());
 }
@@ -107,13 +107,13 @@ NAN_METHOD(Batch::Del) {
   v8::Local<v8::Function> callback; // purely for the error macros
 
   v8::Local<v8::Value> keyBuffer = info[0];
-  LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+  //LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
-  batch->batch->Delete(key);
-  if (!batch->hasData)
-    batch->hasData = true;
+//  batch->batch->Delete(key);
+//  if (!batch->hasData)
+//    batch->hasData = true;
 
-  DisposeStringOrBufferFromSlice(keyBuffer, key);
+  //DisposeStringOrBufferFromSlice(keyBuffer, key);
 
   info.GetReturnValue().Set(info.Holder());
 }
@@ -121,8 +121,8 @@ NAN_METHOD(Batch::Del) {
 NAN_METHOD(Batch::Clear) {
   Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
-  batch->batch->Clear();
-  batch->hasData = false;
+//  batch->batch->Clear();
+//  batch->hasData = false;
 
   info.GetReturnValue().Set(info.Holder());
 }

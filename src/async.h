@@ -22,14 +22,14 @@ public:
   ) : Nan::AsyncWorker(callback), database(database) { }
 
 protected:
-  void SetStatus(leveldb::Status status) {
+  void SetStatus(kudu::Status status) {
     this->status = status;
     if (!status.ok())
       SetErrorMessage(status.ToString().c_str());
   }
   Database* database;
 private:
-  leveldb::Status status;
+  kudu::Status status;
 };
 
 } // namespace leveldown
