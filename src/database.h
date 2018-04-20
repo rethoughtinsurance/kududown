@@ -53,23 +53,27 @@ namespace leveldown {
   public:
     static void
     Init();
+
     static v8::Local<v8::Value>
     NewInstance(v8::Local<v8::String> &location);
 
-    kudu::Status
-    OpenDatabase(Options* options);
+    kudu::Status OpenDatabase(Options* options);
 
     kudu::Status
     PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
 
     kudu::Status
     GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
+
     kudu::Status
     DeleteFromDatabase(WriteOptions* options, kudu::Slice key);
+
     kudu::Status
     WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
+
     uint64_t
     ApproximateSizeFromDatabase(); //const leveldb::Range* range);
+
     void
     CompactRangeFromDatabase(); //const leveldb::Slice* start, const leveldb::Slice* end);
 
@@ -81,10 +85,13 @@ namespace leveldown {
 
     void //const leveldb::Snapshot*
     NewSnapshot();
+
     void
     ReleaseSnapshot(); //const leveldb::Snapshot* snapshot);
+
     void
     CloseDatabase();
+
     void
     ReleaseIterator(uint32_t id);
 
@@ -93,13 +100,15 @@ namespace leveldown {
 
   private:
     Nan::Utf8String* location;
-    //leveldb::DB* db;
+    void* db;
+    kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
+
     uint32_t currentIteratorId;
     void (*pendingCloseWorker);
     void* blockCache;
     void* filterPolicy;
 
-    std::map<uint32_t, leveldown::Iterator *> iterators;
+    //std::map<uint32_t, leveldown::Iterator *> iterators;
 
     static void
     WriteDoing(uv_work_t *req);

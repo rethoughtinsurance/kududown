@@ -14,58 +14,58 @@
 
 namespace leveldown {
 
-//class OpenWorker : public AsyncWorker {
-//public:
-//  OpenWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , void* blockCache
-//    , const void* filterPolicy
-//    , bool createIfMissing
-//    , bool errorIfExists
-//    , bool compression
-//    , uint32_t writeBufferSize
-//    , uint32_t blockSize
-//    , uint32_t maxOpenFiles
-//    , uint32_t blockRestartInterval
-//    , uint32_t maxFileSize
-//  );
-//
-//  virtual ~OpenWorker ();
-//  virtual void Execute ();
-//
-//private:
-//  leveldb::Options* options;
-//};
-//
-//class CloseWorker : public AsyncWorker {
-//public:
-//  CloseWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//  );
-//
-//  virtual ~CloseWorker ();
-//  virtual void Execute ();
-//  virtual void WorkComplete ();
-//};
-//
-//class IOWorker    : public AsyncWorker {
-//public:
-//  IOWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::Slice key
-//    , v8::Local<v8::Object> &keyHandle
-//  );
-//
-//  virtual ~IOWorker ();
-//  virtual void WorkComplete ();
-//
-//protected:
-//  leveldb::Slice key;
-//};
-//
+class OpenWorker : public AsyncWorker {
+public:
+  OpenWorker (
+      Database *database
+    , Nan::Callback *callback
+    , void* blockCache
+    , const void* filterPolicy
+    , bool createIfMissing
+    , bool errorIfExists
+    , bool compression
+    , uint32_t writeBufferSize
+    , uint32_t blockSize
+    , uint32_t maxOpenFiles
+    , uint32_t blockRestartInterval
+    , uint32_t maxFileSize
+  );
+
+  virtual ~OpenWorker ();
+  virtual void Execute ();
+
+private:
+  Options* options;
+};
+
+class CloseWorker : public AsyncWorker {
+public:
+  CloseWorker (
+      Database *database
+    , Nan::Callback *callback
+  );
+
+  virtual ~CloseWorker ();
+  virtual void Execute ();
+  virtual void WorkComplete ();
+};
+
+class IOWorker    : public AsyncWorker {
+public:
+  IOWorker (
+      Database *database
+    , Nan::Callback *callback
+    , kudu::Slice key
+    , v8::Local<v8::Object> &keyHandle
+  );
+
+  virtual ~IOWorker ();
+  virtual void WorkComplete ();
+
+protected:
+  kudu::Slice key;
+};
+
 //class ReadWorker : public IOWorker {
 //public:
 //  ReadWorker (

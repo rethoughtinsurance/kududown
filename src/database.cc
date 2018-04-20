@@ -19,14 +19,16 @@ namespace leveldown {
   static Nan::Persistent<v8::FunctionTemplate> database_constructor;
 
   Database::Database(const v8::Local<v8::Value>& from)
-      : location(new Nan::Utf8String(from))
-  , currentIteratorId(0)
-  , pendingCloseWorker(NULL), blockCache(NULL), filterPolicy(NULL)
+    : location(new Nan::Utf8String(from))
+    , db(NULL)
+    , currentIteratorId(0)
+    , pendingCloseWorker(NULL)
+    , blockCache(NULL)
+    , filterPolicy(NULL)
   { }
 
   Database::~Database() {
-//    if (db != NULL)
-//      delete db;
+
     delete location;
   }
 
@@ -35,36 +37,62 @@ namespace leveldown {
 
   kudu::Status
   Database::OpenDatabase(Options* options) {
-    //return leveldb::DB::Open(*options, **location, &db);
-    return kudu::Status();
+    if (!options) {
+      return kudu::Status::InvalidArgument("options cannot be empty");
+    }
+
+    return kudu::Status::NotSupported("OpenDatabase not implemented");
+    /*
+     *   client::SetVerboseLogLevel(2);
+
+  kudu::Status kuduStatus =
+      client::KuduClientBuilder()
+      .add_master_server_addr("192.168.1.3").Build(&kuduClientPtr);
+
+  CHECK_OK(kuduStatus, "Unable to connect to Kudu Server", ExecutionException)
+
+//  if (kuduStatus.ok()) {
+//    std::cout << "Client OK" << std::endl;
+//  }
+//  else {
+//    std::cout << "Client NOT OK" << std::endl;
+//    return;
+//  }
+
+  kuduStatus = kuduClientPtr->OpenTable(tableName, &table);
+  CHECK_OK(kuduStatus, "Unable to open the table", ExecutionException)
+
+  std::cout << "TABLE OPENED" << std::endl;
+
+     */
   }
 
   kudu::Status
   Database::PutToDatabase(WriteOptions* options, kudu::Slice key,
                           kudu::Slice value) {
     //return db->Put(*options, key, value);
-    return kudu::Status();
+    return kudu::Status::NotSupported("PutToDatabase not implemented");
   }
 
   kudu::Status
   Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
                             std::string& value) {
     //return db->Get(*options, key, &value);
-    return kudu::Status();
+    return kudu::Status::NotSupported("GetFromDatabase not implemented");
   }
 
   kudu::Status
   Database::DeleteFromDatabase(WriteOptions* options,
                                kudu::Slice key) {
     //return db->Delete(*options, key);
-    return kudu::Status();
+    return kudu::Status::NotSupported("DeleteFromDatabase not implemented");
   }
 
   kudu::Status
   Database::WriteBatchToDatabase(WriteOptions* options,
                                  WriteBatch* batch) {
     //return db->Write(*options, batch);
-    return kudu::Status();
+    return kudu::Status::NotSupported("WriteBatchToDatabase not implemented");
   }
 
   uint64_t
@@ -112,11 +140,12 @@ namespace leveldown {
     // we have to invoke a pending CloseWorker if there is one
     // if there is a pending CloseWorker it means that we're waiting for
     // iterators to end before we can close them
-    iterators.erase(id);
-    if (iterators.empty() && pendingCloseWorker != NULL) {
-      Nan::AsyncQueueWorker((AsyncWorker*) pendingCloseWorker);
-      pendingCloseWorker = NULL;
-    }
+
+//    iterators.erase(id);
+//    if (iterators.empty() && pendingCloseWorker != NULL) {
+//      Nan::AsyncQueueWorker((AsyncWorker*) pendingCloseWorker);
+//      pendingCloseWorker = NULL;
+//    }
   }
 
   void
@@ -142,13 +171,13 @@ namespace leveldown {
 
   void
   Database::Init() {
-//    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
-//        Database::New);
-//    database_constructor.Reset(tpl);
-//    tpl->SetClassName(Nan::New("Database").ToLocalChecked());
-//    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-//  Nan::SetPrototypeMethod(tpl, "open", Database::Open);
-//  Nan::SetPrototypeMethod(tpl, "close", Database::Close);
+    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
+        Database::New);
+    database_constructor.Reset(tpl);
+    tpl->SetClassName(Nan::New("Database").ToLocalChecked());
+    tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    Nan::SetPrototypeMethod(tpl, "open", Database::Open);
+    Nan::SetPrototypeMethod(tpl, "close", Database::Close);
 //  Nan::SetPrototypeMethod(tpl, "put", Database::Put);
 //  Nan::SetPrototypeMethod(tpl, "get", Database::Get);
 //  Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
@@ -159,92 +188,92 @@ namespace leveldown {
 //  Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
   }
 
-//NAN_METHOD(Database::New) {
-//  Database* obj = new Database(info[0]);
-//  obj->Wrap(info.This());
-//
-//  info.GetReturnValue().Set(info.This());
-//}
-//
-//v8::Local<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
-//  Nan::EscapableHandleScope scope;
-//
-//  Nan::MaybeLocal<v8::Object> maybeInstance;
-//  v8::Local<v8::Object> instance;
-//
-//  v8::Local<v8::FunctionTemplate> constructorHandle =
-//      Nan::New<v8::FunctionTemplate>(database_constructor);
-//
-//  v8::Local<v8::Value> argv[] = { location };
-//  maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 1, argv);
-//
-//  if (maybeInstance.IsEmpty())
-//      Nan::ThrowError("Could not create new Database instance");
-//  else
-//    instance = maybeInstance.ToLocalChecked();
-//  return scope.Escape(instance);
-//}
-//
-//NAN_METHOD(Database::Open) {
-//  LD_METHOD_SETUP_COMMON(open, 0, 1)
-//
-//  bool createIfMissing = BooleanOptionValue(optionsObj, "createIfMissing", true);
-//  bool errorIfExists = BooleanOptionValue(optionsObj, "errorIfExists");
-//  bool compression = BooleanOptionValue(optionsObj, "compression", true);
-//
-//  uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
-//  uint32_t writeBufferSize = UInt32OptionValue(
-//      optionsObj
-//    , "writeBufferSize"
-//    , 4 << 20
-//  );
-//  uint32_t blockSize = UInt32OptionValue(optionsObj, "blockSize", 4096);
-//  uint32_t maxOpenFiles = UInt32OptionValue(optionsObj, "maxOpenFiles", 1000);
-//  uint32_t blockRestartInterval = UInt32OptionValue(
-//      optionsObj
-//    , "blockRestartInterval"
-//    , 16
-//  );
-//  uint32_t maxFileSize = UInt32OptionValue(optionsObj, "maxFileSize", 2 << 20);
-//
-//  database->blockCache = leveldb::NewLRUCache(cacheSize);
-//  database->filterPolicy = leveldb::NewBloomFilterPolicy(10);
-//
-//  OpenWorker* worker = new OpenWorker(
-//      database
-//    , new Nan::Callback(callback)
-//    , database->blockCache
-//    , database->filterPolicy
-//    , createIfMissing
-//    , errorIfExists
-//    , compression
-//    , writeBufferSize
-//    , blockSize
-//    , maxOpenFiles
-//    , blockRestartInterval
-//    , maxFileSize
-//  );
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//  Nan::AsyncQueueWorker(worker);
-//}
-//
+NAN_METHOD(Database::New) {
+  Database* obj = new Database(info[0]);
+  obj->Wrap(info.This());
+
+  info.GetReturnValue().Set(info.This());
+}
+
+v8::Local<v8::Value> Database::NewInstance(v8::Local<v8::String> &location) {
+  Nan::EscapableHandleScope scope;
+
+  Nan::MaybeLocal<v8::Object> maybeInstance;
+  v8::Local<v8::Object> instance;
+
+  v8::Local<v8::FunctionTemplate> constructorHandle =
+      Nan::New<v8::FunctionTemplate>(database_constructor);
+
+  v8::Local<v8::Value> argv[] = { location };
+  maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 1, argv);
+
+  if (maybeInstance.IsEmpty())
+      Nan::ThrowError("Could not create new Database instance");
+  else
+    instance = maybeInstance.ToLocalChecked();
+  return scope.Escape(instance);
+}
+
+NAN_METHOD(Database::Open) {
+  LD_METHOD_SETUP_COMMON(open, 0, 1)
+
+  bool createIfMissing = BooleanOptionValue(optionsObj, "createIfMissing", true);
+  bool errorIfExists = BooleanOptionValue(optionsObj, "errorIfExists");
+  bool compression = BooleanOptionValue(optionsObj, "compression", true);
+
+  uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
+  uint32_t writeBufferSize = UInt32OptionValue(
+      optionsObj
+    , "writeBufferSize"
+    , 4 << 20
+  );
+  uint32_t blockSize = UInt32OptionValue(optionsObj, "blockSize", 4096);
+  uint32_t maxOpenFiles = UInt32OptionValue(optionsObj, "maxOpenFiles", 1000);
+  uint32_t blockRestartInterval = UInt32OptionValue(
+      optionsObj
+    , "blockRestartInterval"
+    , 16
+  );
+  uint32_t maxFileSize = UInt32OptionValue(optionsObj, "maxFileSize", 2 << 20);
+
+  //database->blockCache = leveldb::NewLRUCache(cacheSize);
+  //database->filterPolicy = leveldb::NewBloomFilterPolicy(10);
+
+  OpenWorker* worker = new OpenWorker(
+      database
+    , new Nan::Callback(callback)
+    , database->blockCache
+    , database->filterPolicy
+    , createIfMissing
+    , errorIfExists
+    , compression
+    , writeBufferSize
+    , blockSize
+    , maxOpenFiles
+    , blockRestartInterval
+    , maxFileSize
+  );
+  // persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
+  Nan::AsyncQueueWorker(worker);
+}
+
 //// for an empty callback to iterator.end()
 //NAN_METHOD(EmptyMethod) {
 //}
 //
-//NAN_METHOD(Database::Close) {
-//  LD_METHOD_SETUP_COMMON_ONEARG(close)
-//
-//  CloseWorker* worker = new CloseWorker(
-//      database
-//    , new Nan::Callback(callback)
-//  );
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//
+NAN_METHOD(Database::Close) {
+  LD_METHOD_SETUP_COMMON_ONEARG(close)
+
+  CloseWorker* worker = new CloseWorker(
+      database
+    , new Nan::Callback(callback)
+  );
+  // persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
+
 //  if (!database->iterators.empty()) {
 //    // yikes, we still have iterators open! naughty naughty.
 //    // we have to queue up a CloseWorker and manually close each of them.
@@ -283,7 +312,8 @@ namespace leveldown {
 //  } else {
 //    Nan::AsyncQueueWorker(worker);
 //  }
-//}
+  Nan::AsyncQueueWorker(worker);
+}
 //
 //NAN_METHOD(Database::Put) {
 //  LD_METHOD_SETUP_COMMON(put, 2, 3)

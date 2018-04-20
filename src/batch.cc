@@ -11,16 +11,15 @@ namespace leveldown {
 
 static Nan::Persistent<v8::FunctionTemplate> batch_constructor;
 
-Batch::Batch(/*leveldown::Database* database, bool sync) : database(database*/) {
-//  options = new leveldb::WriteOptions();
-//  options->sync = sync;
-//  batch = new leveldb::WriteBatch();
-//  hasData = false;
+Batch::Batch(leveldown::Database* database, bool sync)
+  : database(database), hasData(false) {
+    options = new WriteOptions();
+    batch = 0;
 }
 
 Batch::~Batch () {
-//  delete options;
-//  delete batch;
+  delete options;
+  //delete batch;
 }
 
 kudu::Status Batch::Write () {
@@ -28,7 +27,7 @@ kudu::Status Batch::Write () {
 }
 
 void Batch::Init () {
-  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(Batch::New);
+  const v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(Batch::New);
   batch_constructor.Reset(tpl);
   tpl->SetClassName(Nan::New("Batch").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
@@ -48,7 +47,7 @@ NAN_METHOD(Batch::New) {
 
   bool sync = BooleanOptionValue(optionsObj, "sync");
 
-  Batch* batch = new Batch(/*database, sync*/);
+  Batch* batch = new Batch(database, sync);
   batch->Wrap(info.This());
 
   info.GetReturnValue().Set(info.This());

@@ -52,7 +52,7 @@ NAN_METHOD(RepairDB) {
 
 void Init (v8::Local<v8::Object> target) {
   Database::Init();
-  leveldown::Iterator::Init();
+  //leveldown::Iterator::Init();
   leveldown::Batch::Init();
 
   v8::Local<v8::Function> leveldown =
