@@ -28,7 +28,7 @@
               ]
             , 'cflags': []
             ,  "include_dirs"  : [
-                  "deps/kudu/mac/kudu",
+                  "deps/kudu/mac/kudu/include/kudu",
                   "deps/kudu/mac/kudu/include"
                ]
           }]
