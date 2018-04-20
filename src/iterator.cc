@@ -388,35 +388,35 @@ namespace leveldown {
 //    Nan::SetPrototypeMethod(tpl, "end", Iterator::End);
 //  }
 //
-//  v8::Local<v8::Object>
-//  Iterator::NewInstance(v8::Local<v8::Object> database,
-//                        v8::Local<v8::Number> id,
-//                        v8::Local<v8::Object> optionsObj) {
-//
-//    Nan::EscapableHandleScope scope;
-//
-//    Nan::MaybeLocal<v8::Object> maybeInstance;
-//    v8::Local<v8::Object> instance;
-//    v8::Local<v8::FunctionTemplate> constructorHandle = Nan::New<
-//        v8::FunctionTemplate>(iterator_constructor);
-//
-//    if (optionsObj.IsEmpty()) {
-//      v8::Local<v8::Value> argv[2] = { database, id };
-//      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 2,
-//                                       argv);
-//    }
-//    else {
-//      v8::Local<v8::Value> argv[3] = { database, id, optionsObj };
-//      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 3,
-//                                       argv);
-//    }
-//
-//    if (maybeInstance.IsEmpty())
-//      Nan::ThrowError("Could not create new Iterator instance");
-//    else
-//      instance = maybeInstance.ToLocalChecked();
-//    return scope.Escape(instance);
-//  }
+  v8::Local<v8::Object>
+  Iterator::NewInstance(v8::Local<v8::Object> database,
+                        v8::Local<v8::Number> id,
+                        v8::Local<v8::Object> optionsObj) {
+
+    Nan::EscapableHandleScope scope;
+
+    Nan::MaybeLocal<v8::Object> maybeInstance;
+    v8::Local<v8::Object> instance;
+    v8::Local<v8::FunctionTemplate> constructorHandle = Nan::New<
+        v8::FunctionTemplate>(iterator_constructor);
+
+    if (optionsObj.IsEmpty()) {
+      v8::Local<v8::Value> argv[2] = { database, id };
+      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 2,
+                                       argv);
+    }
+    else {
+      v8::Local<v8::Value> argv[3] = { database, id, optionsObj };
+      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 3,
+                                       argv);
+    }
+
+    if (maybeInstance.IsEmpty())
+      Nan::ThrowError("Could not create new Iterator instance");
+    else
+      instance = maybeInstance.ToLocalChecked();
+    return scope.Escape(instance);
+  }
 //
 //  NAN_METHOD(Iterator::New){
 //Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());

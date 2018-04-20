@@ -14,11 +14,17 @@
                     , "DisableSpecificWarnings": [ "4355", "4530" ,"4267", "4244", "4506" ]
                   }
               }
+            , "include_dirs"  : [
+                 "deps/kudu/mac/include"
+              ]
           }]
         , ['OS == "linux"', {
               'cflags': [
               ]
             , 'cflags!': [ '-fno-tree-vrp']
+            ,  "include_dirs"  : [
+                  "deps/kudu/linux/include"
+               ]
           }]
         , ['OS == "android"', {
               'cflags': [ '-fPIC' ]

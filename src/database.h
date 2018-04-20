@@ -16,34 +16,40 @@
 
 #include "iterator.h"
 #include "kududown.h"
+#include "kuduoptions.h"
 
 namespace leveldown {
 
   NAN_METHOD(LevelDOWN);
 
-//struct Reference {
-//  Nan::Persistent<v8::Object> handle;
-//  leveldb::Slice slice;
-//
-//  Reference(v8::Local<v8::Value> obj, leveldb::Slice slice) : slice(slice) {
-//    v8::Local<v8::Object> _obj = Nan::New<v8::Object>();
-//    _obj->Set(Nan::New("obj").ToLocalChecked(), obj);
-//    handle.Reset(_obj);
-//  };
-//};
-//
-//static inline void ClearReferences (std::vector<Reference *> *references) {
-//  for (std::vector<Reference *>::iterator it = references->begin()
-//      ; it != references->end()
-//      ; ) {
-//    DisposeStringOrBufferFromSlice((*it)->handle, (*it)->slice);
-//    it = references->erase(it);
-//  }
-//  delete references;
-//}
+  struct Reference
+  {
+    Nan::Persistent<v8::Object> handle;
+    kudu::Slice slice;
+
+    Reference(v8::Local<v8::Value> obj, kudu::Slice slice)
+        : slice(slice) {
+      v8::Local<v8::Object> _obj = Nan::New<v8::Object>();
+      _obj->Set(Nan::New("obj").ToLocalChecked(), obj);
+      handle.Reset(_obj);
+    }
+    ;
+  };
+
+  static inline void
+  ClearReferences(std::vector<Reference *> *references) {
+    for (std::vector<Reference *>::iterator it = references->begin();
+        it != references->end();) {
+      DisposeStringOrBufferFromSlice((*it)->handle, (*it)->slice);
+      it = references->erase(it);
+    }
+    delete references;
+  }
 
   class Database : public Nan::ObjectWrap
   {
+    typedef void WriteBatch;
+
   public:
     static void
     Init();
@@ -51,32 +57,32 @@ namespace leveldown {
     NewInstance(v8::Local<v8::String> &location);
 
     kudu::Status
-    OpenDatabase(/*leveldb::Options* options*/);
+    OpenDatabase(Options* options);
 
     kudu::Status
-    PutToDatabase();//leveldb::WriteOptions* options, leveldb::Slice key, leveldb::Slice value);
+    PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
 
     kudu::Status
-    GetFromDatabase();//leveldb::ReadOptions* options, leveldb::Slice key, std::string& value);
+    GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
     kudu::Status
-    DeleteFromDatabase();//leveldb::WriteOptions* options, leveldb::Slice key);
+    DeleteFromDatabase(WriteOptions* options, kudu::Slice key);
     kudu::Status
-    WriteBatchToDatabase();//leveldb::WriteOptions* options, leveldb::WriteBatch* batch);
+    WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
     uint64_t
-    ApproximateSizeFromDatabase();//const leveldb::Range* range);
+    ApproximateSizeFromDatabase(); //const leveldb::Range* range);
     void
-    CompactRangeFromDatabase();//const leveldb::Slice* start, const leveldb::Slice* end);
+    CompactRangeFromDatabase(); //const leveldb::Slice* start, const leveldb::Slice* end);
 
     void
-    GetPropertyFromDatabase();//const leveldb::Slice& property, std::string* value);
+    GetPropertyFromDatabase(); //const leveldb::Slice& property, std::string* value);
 
-    void//leveldb::Iterator*
-    NewIterator();//leveldb::ReadOptions* options);
+    void //leveldb::Iterator*
+    NewIterator(); //leveldb::ReadOptions* options);
 
-    void//const leveldb::Snapshot*
+    void //const leveldb::Snapshot*
     NewSnapshot();
     void
-    ReleaseSnapshot();//const leveldb::Snapshot* snapshot);
+    ReleaseSnapshot(); //const leveldb::Snapshot* snapshot);
     void
     CloseDatabase();
     void
@@ -90,8 +96,8 @@ namespace leveldown {
     //leveldb::DB* db;
     uint32_t currentIteratorId;
     void (*pendingCloseWorker);
-    //leveldb::Cache* blockCache;
-    //const leveldb::FilterPolicy* filterPolicy;
+    void* blockCache;
+    void* filterPolicy;
 
     std::map<uint32_t, leveldown::Iterator *> iterators;
 
@@ -99,10 +105,10 @@ namespace leveldown {
     WriteDoing(uv_work_t *req);
     static void
     WriteAfter(uv_work_t *req);
-//
-//    static NAN_METHOD(New);
-//  static NAN_METHOD(Open);
-//  static NAN_METHOD(Close);
+
+    static NAN_METHOD(New);
+  static NAN_METHOD(Open);
+  static NAN_METHOD(Close);
 //  static NAN_METHOD(Put);
 //  static NAN_METHOD(Delete);
 //  static NAN_METHOD(Get);
@@ -115,6 +121,6 @@ namespace leveldown {
 };
 
 }
- // namespace leveldown
+    // namespace leveldown
 
 #endif

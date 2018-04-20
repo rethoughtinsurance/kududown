@@ -22,12 +22,13 @@ namespace leveldown {
   class Iterator : public Nan::ObjectWrap
   {
   public:
-//    static void
-//    Init();
-//    static v8::Local<v8::Object>
-//    NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
-//                v8::Local<v8::Object> optionsObj);
-//
+    static void
+    Init();
+
+    static v8::Local<v8::Object>
+    NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
+                v8::Local<v8::Object> optionsObj);
+
     Iterator(/*Database* database, uint32_t id, leveldb::Slice* start,
              std::string* end, bool reverse, bool keys, bool values, int limit,
              std::string* lt, std::string* lte, std::string* gt,

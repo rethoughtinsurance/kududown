@@ -19,49 +19,50 @@ namespace leveldown {
   static Nan::Persistent<v8::FunctionTemplate> database_constructor;
 
   Database::Database(const v8::Local<v8::Value>& from)
-      //: location(new Nan::Utf8String(from)), db(NULL), currentIteratorId(0), pendingCloseWorker(
-      //    NULL, blockCache(NULL), filterPolicy(NULL)
+      : location(new Nan::Utf8String(from))
+  , currentIteratorId(0)
+  , pendingCloseWorker(NULL), blockCache(NULL), filterPolicy(NULL)
   { }
 
   Database::~Database() {
 //    if (db != NULL)
 //      delete db;
-//    delete location;
+    delete location;
   }
 
 
   /* Calls from worker threads, NO V8 HERE *****************************/
 
   kudu::Status
-  Database::OpenDatabase(/*leveldb::Options* options*/) {
+  Database::OpenDatabase(Options* options) {
     //return leveldb::DB::Open(*options, **location, &db);
     return kudu::Status();
   }
 
   kudu::Status
-  Database::PutToDatabase(/*leveldb::WriteOptions* options, leveldb::Slice key,
-                          leveldb::Slice value*/) {
+  Database::PutToDatabase(WriteOptions* options, kudu::Slice key,
+                          kudu::Slice value) {
     //return db->Put(*options, key, value);
     return kudu::Status();
   }
 
   kudu::Status
-  Database::GetFromDatabase(/*leveldb::ReadOptions* options, leveldb::Slice key,
-                            std::string& value*/) {
+  Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
+                            std::string& value) {
     //return db->Get(*options, key, &value);
     return kudu::Status();
   }
 
   kudu::Status
-  Database::DeleteFromDatabase(/*leveldb::WriteOptions* options,
-                               leveldb::Slice key*/) {
+  Database::DeleteFromDatabase(WriteOptions* options,
+                               kudu::Slice key) {
     //return db->Delete(*options, key);
     return kudu::Status();
   }
 
   kudu::Status
-  Database::WriteBatchToDatabase(/*leveldb::WriteOptions* options,
-                                 leveldb::WriteBatch* batch*/) {
+  Database::WriteBatchToDatabase(WriteOptions* options,
+                                 WriteBatch* batch) {
     //return db->Write(*options, batch);
     return kudu::Status();
   }
@@ -69,8 +70,9 @@ namespace leveldown {
   uint64_t
   Database::ApproximateSizeFromDatabase(/*const leveldb::Range* range*/) {
     uint64_t size;
+    // JMB TODO
     //db->GetApproximateSizes(range, 1, &size);
-    return size;
+    return 0;
   }
 
   void
