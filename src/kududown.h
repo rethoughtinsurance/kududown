@@ -25,28 +25,27 @@ static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
 
 // NOTE: this MUST be called on objects created by
 // LD_STRING_OR_BUFFER_TO_SLICE
-//static inline void DisposeStringOrBufferFromSlice(
-//        Nan::Persistent<v8::Object> &handle
-//      , leveldb::Slice slice) {
-//  Nan::HandleScope scope;
-//
-//  if (!slice.empty()) {
-//    v8::Local<v8::Value> obj = Nan::New<v8::Object>(handle)->Get(Nan::New<v8::String>("obj").ToLocalChecked());
-//    if (!node::Buffer::HasInstance(obj))
-//      delete[] slice.data();
-//  }
-//
-//  // JMB: TODO ambigous reference to method
-//  // handle.Reset();
-//}
+static inline void DisposeStringOrBufferFromSlice(
+        Nan::Persistent<v8::Object> &handle
+      , kudu::Slice slice) {
+  Nan::HandleScope scope;
 
-//static inline void DisposeStringOrBufferFromSlice(
-//        v8::Local<v8::Value> handle
-//      , leveldb::Slice slice) {
-//
-//  if (!slice.empty() && !node::Buffer::HasInstance(handle))
-//    delete[] slice.data();
-//}
+  if (!slice.empty()) {
+    v8::Local<v8::Value> obj = Nan::New<v8::Object>(handle)->Get(Nan::New<v8::String>("obj").ToLocalChecked());
+    if (!node::Buffer::HasInstance(obj))
+      delete[] slice.data();
+  }
+
+  handle.Reset();
+}
+
+static inline void DisposeStringOrBufferFromSlice(
+        v8::Local<v8::Value> handle
+      , kudu::Slice slice) {
+
+  if (!slice.empty() && !node::Buffer::HasInstance(handle))
+    delete[] slice.data();
+}
 
 // NOTE: must call DisposeStringOrBufferFromSlice() on objects created here
 #define LD_STRING_OR_BUFFER_TO_SLICE(to, from, name)                           \

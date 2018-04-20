@@ -22,12 +22,12 @@ NAN_METHOD(DestroyDB) {
   Nan::Callback* callback = new Nan::Callback(
       v8::Local<v8::Function>::Cast(info[1]));
 
-//  DestroyWorker* worker = new DestroyWorker(
-//      location
-//    , callback
-//  );
+  DestroyWorker* worker = new DestroyWorker(
+      location
+    , callback
+  );
 
-//  Nan::AsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 
   info.GetReturnValue().SetUndefined();
 }
@@ -40,19 +40,19 @@ NAN_METHOD(RepairDB) {
   Nan::Callback* callback = new Nan::Callback(
       v8::Local<v8::Function>::Cast(info[1]));
 
-//  RepairWorker* worker = new RepairWorker(
-//      location
-//    , callback
-//  );
-//
-//  Nan::AsyncQueueWorker(worker);
+  RepairWorker* worker = new RepairWorker(
+      location
+    , callback
+  );
+
+  Nan::AsyncQueueWorker(worker);
 
   info.GetReturnValue().SetUndefined();
 }
 
 void Init (v8::Local<v8::Object> target) {
   Database::Init();
-  //leveldown::Iterator::Init();
+  leveldown::Iterator::Init();
   leveldown::Batch::Init();
 
   v8::Local<v8::Function> leveldown =
