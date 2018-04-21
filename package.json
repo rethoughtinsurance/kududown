@@ -17,7 +17,7 @@
     "level",
     "kudu"
   ],
-  "main": "index",
+  "main": "./ts/lib/index",
   "typings": "kududown.d.ts",
   "dependencies": {
     "abstract-leveldown": "~4.0.0",
