@@ -2,7 +2,7 @@
 import { Log, Level } from 'ng2-logger';
 import {kududownSchema, KUDUDOWN_SCHEMA_TYPES,
   KuduDownSchemaAvscMap} from '../index';
-//import {kududown} from '../index';
+// import {kududown} from '../index';
 
 const logger = Log.create('kududown-quicktest', Level.DATA, Level.INFO, Level.ERROR, Level.WARN);
 const type: kududownSchema.KuduDataType = kududownSchema.KuduDataType.BOOLEAN;

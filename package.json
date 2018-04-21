@@ -17,8 +17,8 @@
     "level",
     "kudu"
   ],
-  "main": "index.js",
-  "typings": "leveldown.d.ts",
+  "main": "index",
+  "typings": "kududown.d.ts",
   "dependencies": {
     "abstract-leveldown": "~4.0.0",
     "avro-typescript": "https://github.com/rethoughtinsurance/avro-typescript.git",

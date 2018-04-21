@@ -1,6 +1,6 @@
 {
     "targets": [{
-      "target_name": "leveldown"
+      "target_name": "kududown"
     , "conditions": [
           ["OS == 'win'", {
               "defines": [

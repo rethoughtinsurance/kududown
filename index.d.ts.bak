@@ -1,3 +1,5 @@
+// This file is renamed for now, as we don't need to expose kududown as a
+// typescript module. Could not get it to work, but not really required.
 import { AbstractLevelDOWN, AbstractIteratorOptions, AbstractIterator } from 'abstract-leveldown';
 
 type BaseType = string | Buffer
