@@ -28,8 +28,8 @@
               ]
             , 'cflags': []
             ,  "include_dirs"  : [
-                  "deps/kudu/mac/kudu/include/kudu",
-                  "deps/kudu/mac/kudu/include"
+                  "deps/kudu/mac/include",
+                  "deps/kudu/mac/include/kudu"
                ]
           }]
         , ['OS == "android"', {
