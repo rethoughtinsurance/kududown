@@ -10,10 +10,11 @@ console.log(`Top of index before kududown load`);
 // changing all the tests. Therefore, this is renamed to `kududown` so
 // the export is a different name.
 
-// Must be commented until the leveldown.node loads.
+// Must be commented until the kududown.node loads.
 // And we should probably change all of the names to kududown.
-// const kududown = require('./kududown').kuduDOWN;
-// export {kududown};
+const kududown = require('./kududown').kuduDOWN;
+
+export {kududown};
 
 export {kududownSchema, kuduTableDefs, KUDUDOWN_SCHEMA_TYPES,
   KuduDownSchemaAvscMap};

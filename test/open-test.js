@@ -1,5 +1,5 @@
 const test       = require('tape')
-    , leveldown  = require('../kududown')
+    , leveldown  = require('../ts/lib/kududown')
     , abstract   = require('abstract-leveldown/abstract/open-test')
 
 // Can probably change the name of leveldown here to kududown and it should work,

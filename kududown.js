@@ -1,5 +1,5 @@
 const util              = require('util')
-    , AbstractKuduDOWN = require('abstract-leveldown').AbstractKuduDOWN
+    , AbstractKuduDOWN = require('abstract-leveldown').AbstractLevelDOWN
 
     , binding           = require('bindings')('kududown').kududown
 
@@ -14,7 +14,7 @@ function KuduDOWN (location) {
   AbstractKuduDOWN.call(this, location)
   this.binding = binding(location)
 }
-
+console.log('typeof KuduDOWN: ' + (typeof KuduDOWN))
 util.inherits(KuduDOWN, AbstractKuduDOWN)
 
 
