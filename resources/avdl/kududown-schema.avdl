@@ -1,6 +1,19 @@
 @namespace("org.kududown.avro")
 protocol KuduDownSchema {
 
+  // This is replicated from the Typescript kududown-schema-types.ts.
+  // It is used in a KuduMessage to indicate the type being transmitted.
+  enum KuduSchemaType {
+    KuduScan,
+    KuduInsert,
+    KuduScanResult
+  }
+
+  record KuduMessage {
+    KuduSchemaType schemaType;
+    bytes obj; // Avro-serialized object of the specific type.
+  }
+
   enum KuduOperationType {
     SCAN, INSERT, DELETE
   }
@@ -57,10 +70,29 @@ protocol KuduDownSchema {
     union {null,string,bytes} value;
   }
 
-  record KuduPredicate {
+  enum KuduPredicateType {
+    COMPARISON,
+    IN_LIST,
+    IS_NULL,
+    IS_NOT_NULL
+  }
+
+  record KuduComparisonPredicate {
     KuduColumnDef column;
     KuduComparisonOperator operator;
-    KuduDataValue dataValue;
+    string dataValue;
+  }
+
+  record KuduInListPredicate {
+    KuduColumnDef column;
+    array<string> valueList;
+  }
+
+  record KuduPredicate {
+    KuduPredicateType type;
+    KuduColumnDef column;
+    // Null is used for types IS_NULL and IS_NOT_NULL, no data other than the column is needed.
+    union {null,KuduComparisonPredicate,KuduInListPredicate} predicate;
   }
 
   record KuduScan {

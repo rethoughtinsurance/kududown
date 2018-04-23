@@ -1,0 +1,16 @@
+{
+  "type" : "record",
+  "name" : "KuduComparisonPredicate",
+  "namespace" : "org.kududown.avro",
+  "fields" : [ {
+    "name" : "operator",
+    "type" : {
+      "type" : "enum",
+      "name" : "KuduComparisonOperator",
+      "symbols" : [ "EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "IS_NULL", "IS_NOT_NULL" ]
+    }
+  }, {
+    "name" : "dataValue",
+    "type" : "string"
+  } ]
+}

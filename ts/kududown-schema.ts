@@ -11,6 +11,13 @@ export interface KuduOperation {
 	operationType: KuduOperationType;
 }
 
+export enum KuduPredicateType {
+  COMPARISON = 'COMPARISON',
+  IN_LIST = 'IN_LIST',
+  IS_NULL = 'IS_NULL',
+  IS_NOT_NULL = 'IS_NOT_NULL'
+};
+
 export enum KuduDataType {
   BOOLEAN = 'BOOLEAN',
   INT8 = 'INT8',
@@ -52,15 +59,19 @@ export enum KuduComparisonOperator {
   IS_NOT_NULL = 'IS_NOT_NULL'
 };
 
-export interface KuduDataValue {
-	dataType: KuduDataType;
-	value?: null | undefined | string | Buffer;
+export interface KuduComparisonPredicate {
+	operator: KuduComparisonOperator;
+	dataValue: string;
+}
+
+export interface KuduInListPredicate {
+	valueList: string[];
 }
 
 export interface KuduPredicate {
+	type: KuduPredicateType;
 	column: KuduColumnDef;
-	operator: KuduComparisonOperator;
-	dataValue: KuduDataValue;
+	predicate?: null | undefined | KuduComparisonPredicate | KuduInListPredicate;
 }
 
 export interface KuduScan {
@@ -69,6 +80,11 @@ export interface KuduScan {
 	predicateList: KuduPredicate[];
 }
 
+
+export interface KuduDataValue {
+	dataType: KuduDataType;
+	value?: null | undefined | string | Buffer;
+}
 
 export interface KuduRow {
 	values: KuduDataValue[];

@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "KuduPredicateType",
+  "namespace" : "org.kududown.avro",
+  "symbols" : [ "COMPARISON", "IN_LIST", "IS_NULL", "IS_NOT_NULL" ]
+}

@@ -36,6 +36,13 @@ KuduDownSchemaAvscMap.set("KuduScan", {
         type : "record",
         name : "KuduPredicate",
         fields : [ {
+          name : "type",
+          type : {
+            type : "enum",
+            name : "KuduPredicateType",
+            symbols : [ "COMPARISON", "IN_LIST", "IS_NULL", "IS_NOT_NULL" ]
+          }
+        }, {
           name : "column",
           type : {
             type : "record",
@@ -66,25 +73,32 @@ KuduDownSchemaAvscMap.set("KuduScan", {
             } ]
           }
         }, {
-          name : "operator",
-          type : {
-            type : "enum",
-            name : "KuduComparisonOperator",
-            symbols : [ "EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "IS_NULL", "IS_NOT_NULL" ]
-          }
-        }, {
-          name : "dataValue",
-          type : {
+          name : "predicate",
+          type : [ "null", {
             type : "record",
-            name : "KuduDataValue",
+            name : "KuduComparisonPredicate",
             fields : [ {
-              name : "dataType",
-              type : "KuduDataType"
+              name : "operator",
+              type : {
+                type : "enum",
+                name : "KuduComparisonOperator",
+                symbols : [ "EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "IS_NULL", "IS_NOT_NULL" ]
+              }
             }, {
-              name : "value",
-              type : [ "null", "string", "bytes" ]
+              name : "dataValue",
+              type : "string"
             } ]
-          }
+          }, {
+            type : "record",
+            name : "KuduInListPredicate",
+            fields : [ {
+              name : "valueList",
+              type : {
+                type : "array",
+                items : "string"
+              }
+            } ]
+          } ]
         } ]
       }
     }
