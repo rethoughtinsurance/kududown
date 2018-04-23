@@ -18,11 +18,3 @@ export {KuduDOWN};
 
 export {kududownSchema, kuduTableDefs, KUDUDOWN_SCHEMA_TYPES,
   KuduDownSchemaAvscMap};
-
-
-
-
-
-// This was a hack, it overrides module.exports which means all of the
-// typescript generated exports are gone.
-//module.exports = leveldown;
