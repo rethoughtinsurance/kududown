@@ -11,10 +11,15 @@ console.log(`Top of index before kududown load`);
 
 // Must be commented until the leveldown.node loads.
 // And we should probably change all of the names to kududown.
-//const kududown = require('./leveldown').levelDOWN;
+// const kududown = require('./kududown').kuduDOWN;
+// export {kududown};
 
 export {kududownSchema, KUDUDOWN_SCHEMA_TYPES,
   KuduDownSchemaAvscMap};
+
+
+
+
 
 // This was a hack, it overrides module.exports which means all of the
 // typescript generated exports are gone.
