@@ -11,7 +11,7 @@
 //#include "iterator_async.h"
 //#include "kududown.h"
 //
-//namespace leveldown {
+//namespace kududown {
 //
 ///** NEXT-MULTI WORKER **/
 //
@@ -97,4 +97,4 @@
 //  callback->Call(0, NULL);
 //}
 //
-//} // namespace leveldown
+//} // namespace kududown

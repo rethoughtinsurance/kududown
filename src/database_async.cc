@@ -1,74 +1,74 @@
-///* Copyright (c) 2012-2017 LevelDOWN contributors
-// * See list at <https://github.com/level/leveldown#contributing>
-// * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
-// */
-//
-//#include <node.h>
-//#include <node_buffer.h>
-//
-//#include "database.h"
-//#include "async.h"
-//#include "database_async.h"
-//#include "kududown.h"
-//
-//namespace leveldown {
-//
-//  /** OPEN WORKER **/
-//
-//  OpenWorker::OpenWorker(Database *database, Nan::Callback *callback,
-//                         void* blockCache, const void* filterPolicy,
-//                         bool createIfMissing, bool errorIfExists,
-//                         bool compression, uint32_t writeBufferSize,
-//                         uint32_t blockSize, uint32_t maxOpenFiles,
-//                         uint32_t blockRestartInterval, uint32_t maxFileSize)
-//      : AsyncWorker(database, callback) {
-////  options = new leveldb::Options();
-////  options->block_cache            = blockCache;
-////  options->filter_policy          = filterPolicy;
-////  options->create_if_missing      = createIfMissing;
-////  options->error_if_exists        = errorIfExists;
-////  options->compression            = compression
-////      ? leveldb::kSnappyCompression
-////      : leveldb::kNoCompression;
-////  options->write_buffer_size      = writeBufferSize;
-////  options->block_size             = blockSize;
-////  options->max_open_files         = maxOpenFiles;
-////  options->block_restart_interval = blockRestartInterval;
-////  options->max_file_size          = maxFileSize;
-//  }
-//  ;
-//
-//  OpenWorker::~OpenWorker() {
-//    delete options;
-//  }
-//
-//  void
-//  OpenWorker::Execute() {
-//    //SetStatus(database->OpenDatabase(options));
-//  }
-//
-//  /** CLOSE WORKER **/
-//
-//  CloseWorker::CloseWorker(Database *database, Nan::Callback *callback)
-//      : AsyncWorker(database, callback) {
-//  }
-//  ;
-//
-//  CloseWorker::~CloseWorker() {
-//  }
-//
-//  void
-//  CloseWorker::Execute() {
-//    database->CloseDatabase();
-//  }
-//
-//  void
-//  CloseWorker::WorkComplete() {
-//    Nan::HandleScope scope;
-//    HandleOKCallback();
-//    delete callback;
-//    callback = NULL;
-//  }
+/* Copyright (c) 2012-2017 LevelDOWN contributors
+ * See list at <https://github.com/level/leveldown#contributing>
+ * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
+ */
+
+#include <node.h>
+#include <node_buffer.h>
+
+#include "database.h"
+#include "async.h"
+#include "database_async.h"
+#include "kududown.h"
+
+namespace kududown {
+
+  /** OPEN WORKER **/
+
+  OpenWorker::OpenWorker(Database *database, Nan::Callback *callback,
+                         void* blockCache, const void* filterPolicy,
+                         bool createIfMissing, bool errorIfExists,
+                         bool compression, uint32_t writeBufferSize,
+                         uint32_t blockSize, uint32_t maxOpenFiles,
+                         uint32_t blockRestartInterval, uint32_t maxFileSize)
+      : AsyncWorker(database, callback) {
+    options = new Options();
+//  options->block_cache            = blockCache;
+//  options->filter_policy          = filterPolicy;
+//  options->create_if_missing      = createIfMissing;
+//  options->error_if_exists        = errorIfExists;
+//  options->compression            = compression
+//      ? leveldb::kSnappyCompression
+//      : leveldb::kNoCompression;
+//  options->write_buffer_size      = writeBufferSize;
+//  options->block_size             = blockSize;
+//  options->max_open_files         = maxOpenFiles;
+//  options->block_restart_interval = blockRestartInterval;
+//  options->max_file_size          = maxFileSize;
+  }
+  ;
+
+  OpenWorker::~OpenWorker() {
+    delete options;
+  }
+
+  void
+  OpenWorker::Execute() {
+    SetStatus(database->OpenDatabase(options));
+  }
+
+  /** CLOSE WORKER **/
+
+  CloseWorker::CloseWorker(Database *database, Nan::Callback *callback)
+      : AsyncWorker(database, callback) {
+  }
+  ;
+
+  CloseWorker::~CloseWorker() {
+  }
+
+  void
+  CloseWorker::Execute() {
+    database->CloseDatabase();
+  }
+
+  void
+  CloseWorker::WorkComplete() {
+    Nan::HandleScope scope;
+    HandleOKCallback();
+    delete callback;
+    callback = NULL;
+  }
 //
 //  /** IO WORKER (abstract) **/
 //
@@ -291,5 +291,5 @@
 //    v8::Local<v8::Value> argv[] = { Nan::Null() };
 //    callback->Call(1, argv);
 //  }
-//
-//} // namespace leveldown
+
+} // namespace kududown

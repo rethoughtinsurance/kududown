@@ -12,7 +12,7 @@
 
 #include "kududown_async.h"
 
-namespace leveldown {
+namespace kududown {
 
 NAN_METHOD(DestroyDB) {
   Nan::HandleScope scope;
@@ -52,25 +52,25 @@ NAN_METHOD(RepairDB) {
 
 void Init (v8::Local<v8::Object> target) {
   Database::Init();
-  leveldown::Iterator::Init();
-  leveldown::Batch::Init();
+  //kududown::Iterator::Init();
+  kududown::Batch::Init();
 
-  v8::Local<v8::Function> leveldown =
-      Nan::New<v8::FunctionTemplate>(LevelDOWN)->GetFunction();
+  v8::Local<v8::Function> kududown =
+      Nan::New<v8::FunctionTemplate>(KuduDOWN)->GetFunction();
 
-  leveldown->Set(
+  kududown->Set(
       Nan::New("destroy").ToLocalChecked()
     , Nan::New<v8::FunctionTemplate>(DestroyDB)->GetFunction()
   );
 
-  leveldown->Set(
+  kududown->Set(
       Nan::New("repair").ToLocalChecked()
     , Nan::New<v8::FunctionTemplate>(RepairDB)->GetFunction()
   );
 
-  target->Set(Nan::New("leveldown").ToLocalChecked(), leveldown);
+  target->Set(Nan::New("kududown").ToLocalChecked(), kududown);
 }
 
-NODE_MODULE(leveldown, Init)
+NODE_MODULE(kududown, Init)
 
-} // namespace leveldown
+} // namespace kududown

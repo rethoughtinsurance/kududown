@@ -12,7 +12,7 @@
 //#include "async.h"
 //#include "iterator.h"
 //
-//namespace leveldown {
+//namespace kududown {
 //
 //class NextWorker : public AsyncWorker {
 //public:
@@ -48,6 +48,6 @@
 //  Iterator* iterator;
 //};
 //
-//} // namespace leveldown
+//} // namespace kududown
 //
 //#endif

@@ -8,7 +8,7 @@
 //#include "kududown.h"
 //#include "kududown_async.h"
 //
-//namespace leveldown {
+//namespace kududown {
 //
 ///** DESTROY WORKER **/
 //
@@ -46,4 +46,4 @@
 //  SetStatus(leveldb::RepairDB(**location, options));
 //}
 //
-//} // namespace leveldown
+//} // namespace kududown

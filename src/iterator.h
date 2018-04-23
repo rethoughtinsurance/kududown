@@ -14,39 +14,42 @@
 #include "async.h"
 #include "kududown.h"
 
-namespace leveldown {
+namespace kududown {
 
   class Database;
   class AsyncWorker;
 
-  class Iterator : public Nan::ObjectWrap
-  {
+  class Iterator : public Nan::ObjectWrap {
   public:
-    static void
-    Init();
-
-    static v8::Local<v8::Object>
-    NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
-                v8::Local<v8::Object> optionsObj);
+//    static void
+//    Init();
+//
+//    static v8::Local<v8::Object>
+//    NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
+//                v8::Local<v8::Object> optionsObj);
 
     Iterator(/*Database* database, uint32_t id, leveldb::Slice* start,
-             std::string* end, bool reverse, bool keys, bool values, int limit,
-             std::string* lt, std::string* lte, std::string* gt,
-             std::string* gte, bool fillCache, bool keyAsBuffer,
-             bool valueAsBuffer, size_t highWaterMark*/);
+     std::string* end, bool reverse, bool keys, bool values, int limit,
+     std::string* lt, std::string* lte, std::string* gt,
+     std::string* gte, bool fillCache, bool keyAsBuffer,
+     bool valueAsBuffer, size_t highWaterMark*/);
 
     ~Iterator();
-//
-//    bool
-//    IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
-//    leveldb::Status
-//    IteratorStatus();
-//    void
-//    IteratorEnd();
-//    void
-//    Release();
-//    void
-//    ReleaseTarget();
+
+    bool
+    IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
+
+    kudu::Status
+    IteratorStatus();
+
+    void
+    IteratorEnd();
+
+    void
+    Release();
+
+    void
+    ReleaseTarget();
 
   private:
 //    Database* database;
@@ -73,7 +76,7 @@ namespace leveldown {
 //    bool keyAsBuffer;
 //    bool valueAsBuffer;
 //    bool nexting;
-//    bool ended;
+      bool ended;
 //    AsyncWorker* endWorker;
 //
 //  private:
@@ -83,7 +86,7 @@ namespace leveldown {
 //    GetIterator();
 //    bool
 //    OutOfRange(leveldb::Slice* target);
-//
+
 //    static NAN_METHOD(New);
 //  static NAN_METHOD(Seek);
 //  static NAN_METHOD(Next);
@@ -91,6 +94,6 @@ namespace leveldown {
 };
 
 }
- // namespace leveldown
+ // namespace kududown
 
 #endif

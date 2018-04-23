@@ -1,18 +1,33 @@
 #ifndef __kudu_options_h__
 #define __kudu_options_h__
 
-struct Options {
+#include <string>
 
-  // none available
+namespace kududown {
+  struct Options {
+    Options()
+        : tableName(""), createIfMissing(false), errorIfExists(true) {
+    }
+    Options(std::string tName)
+        : tableName(tName), createIfMissing(false), errorIfExists(true) {
+    }
 
-};
+    std::string tableName;
 
-struct WriteOptions {
-  // none available
-};
+    // always false as this refers to a directory missing
+    // which is not applicable to Kudu
+    bool createIfMissing;
+    bool errorIfExists;
+  };
 
-struct ReadOptions {
-  // none available
-};
+  struct WriteOptions {
+    // none available
+  };
+
+  struct ReadOptions {
+    // none available
+  };
+
+}
 
 #endif

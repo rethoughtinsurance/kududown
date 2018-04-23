@@ -8,7 +8,7 @@
 
 #include <nan.h>
 
-namespace leveldown {
+namespace kududown {
 
 NAN_INLINE bool BooleanOptionValue(v8::Local<v8::Object> options,
                                    const char* _key,
@@ -33,6 +33,6 @@ NAN_INLINE uint32_t UInt32OptionValue(v8::Local<v8::Object> options,
     : def;
 }
 
-} // namespace leveldown
+} // namespace kududown
 
 #endif

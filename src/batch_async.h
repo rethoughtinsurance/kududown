@@ -13,7 +13,7 @@
 #include "batch.h"
 #include "database.h"
 
-namespace leveldown {
+namespace kududown {
 
 class BatchWriteWorker : public AsyncWorker {
 public:
@@ -29,6 +29,6 @@ private:
   Batch* batch;
 };
 
-} // namespace leveldown
+} // namespace kududown
 
 #endif

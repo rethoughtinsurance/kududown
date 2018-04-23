@@ -113,8 +113,8 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
   if (info.Length() == 0)                                                      \
     return Nan::ThrowError(#name "() requires a callback argument");           \
-  leveldown::Database* database =                                              \
-    Nan::ObjectWrap::Unwrap<leveldown::Database>(info.This());                 \
+    kududown::Database* database =                                              \
+    Nan::ObjectWrap::Unwrap<kududown::Database>(info.This());                 \
   v8::Local<v8::Object> optionsObj;                                            \
   v8::Local<v8::Function> callback;                                            \
   if (optionPos == -1 && info[callbackPos]->IsFunction()) {                    \

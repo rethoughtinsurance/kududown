@@ -7,26 +7,28 @@
 
 #include "database.h"
 
-namespace leveldown {
+namespace kududown {
+
+  typedef void WriteBatch;
 
   class Batch : public Nan::ObjectWrap
   {
   public:
-    static void
-    Init();
+    static void Init();
+
     static v8::Local<v8::Value>
     NewInstance(v8::Local<v8::Object> database,
                 v8::Local<v8::Object> optionsObj);
 
-    Batch(); //leveldown::Database* database, bool sync);
+    Batch(kududown::Database* database, bool sync);
     ~Batch();
-    kudu::Status
-    Write();
+
+    kudu::Status Write();
 
   private:
-    leveldown::Database* database;
-    //leveldb::WriteOptions* options;
-    //leveldb::WriteBatch* batch;
+    kududown::Database* database;
+    WriteOptions* options;
+    WriteBatch* batch;
     bool hasData; // keep track of whether we're writing data or not
 
     static NAN_METHOD(New);
@@ -36,7 +38,6 @@ namespace leveldown {
     static NAN_METHOD(Write);
   };
 
-}
- // namespace leveldown
+} // namespace kududown
 
 #endif

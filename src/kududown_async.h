@@ -12,7 +12,7 @@
 
 #include "async.h"
 
-namespace leveldown {
+namespace kududown {
 
   class DestroyWorker : public AsyncWorker
   {
@@ -42,6 +42,6 @@ namespace leveldown {
     Nan::Utf8String* location;
   };
 
-} // namespace leveldown
+} // namespace kududown
 
 #endif

@@ -10,14 +10,14 @@
 #include <nan.h>
 #include "database.h"
 
-namespace leveldown {
+namespace kududown {
 
 class Database;
 
 /* abstract */ class AsyncWorker : public Nan::AsyncWorker {
 public:
   AsyncWorker (
-      leveldown::Database* database
+      kududown::Database* database
     , Nan::Callback *callback
   ) : Nan::AsyncWorker(callback), database(database) { }
 
@@ -32,6 +32,6 @@ private:
   kudu::Status status;
 };
 
-} // namespace leveldown
+} // namespace kududown
 
 #endif

@@ -11,19 +11,19 @@
 #include "iterator_async.h"
 #include "common.h"
 
-namespace leveldown {
+namespace kududown {
 
   static Nan::Persistent<v8::FunctionTemplate> iterator_constructor;
 
   Iterator::Iterator(/*Database* database, uint32_t id, leveldb::Slice* start,
-                     std::string* end, bool reverse, bool keys, bool values,
-                     int limit, std::string* lt, std::string* lte,
-                     std::string* gt, std::string* gte, bool fillCache,
-                     bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark*/)
-     // : database(database), id(id), start(start), end(end), reverse(reverse), keys(
-     //     keys), values(values), limit(limit), lt(lt), lte(lte), gt(gt), gte(
-     //     gte), highWaterMark(highWaterMark), keyAsBuffer(keyAsBuffer), valueAsBuffer(
-     //     valueAsBuffer)
+   std::string* end, bool reverse, bool keys, bool values,
+   int limit, std::string* lt, std::string* lte,
+   std::string* gt, std::string* gte, bool fillCache,
+   bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark*/)
+//      : database(database), id(id), start(start), end(end), reverse(reverse), keys(
+//          keys), values(values), limit(limit), lt(lt), lte(lte), gt(gt), gte(
+//          gte), highWaterMark(highWaterMark), keyAsBuffer(keyAsBuffer), valueAsBuffer(
+//          valueAsBuffer)
   {
 //    Nan::HandleScope scope;
 
@@ -37,7 +37,7 @@ namespace leveldown {
 //    seeking = false;
 //    landed = false;
 //    nexting = false;
-//    ended = false;
+    ended = false;
 //    endWorker = NULL;
   }
 
@@ -375,7 +375,7 @@ namespace leveldown {
 ////
 ////  info.GetReturnValue().Set(info.Holder());
 ////}
-//
+
 //  void
 //  Iterator::Init() {
 //    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
@@ -388,40 +388,40 @@ namespace leveldown {
 //    Nan::SetPrototypeMethod(tpl, "end", Iterator::End);
 //  }
 //
-  v8::Local<v8::Object>
-  Iterator::NewInstance(v8::Local<v8::Object> database,
-                        v8::Local<v8::Number> id,
-                        v8::Local<v8::Object> optionsObj) {
-
-    Nan::EscapableHandleScope scope;
-
-    Nan::MaybeLocal<v8::Object> maybeInstance;
-    v8::Local<v8::Object> instance;
-    v8::Local<v8::FunctionTemplate> constructorHandle = Nan::New<
-        v8::FunctionTemplate>(iterator_constructor);
-
-    if (optionsObj.IsEmpty()) {
-      v8::Local<v8::Value> argv[2] = { database, id };
-      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 2,
-                                       argv);
-    }
-    else {
-      v8::Local<v8::Value> argv[3] = { database, id, optionsObj };
-      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 3,
-                                       argv);
-    }
-
-    if (maybeInstance.IsEmpty())
-      Nan::ThrowError("Could not create new Iterator instance");
-    else
-      instance = maybeInstance.ToLocalChecked();
-    return scope.Escape(instance);
-  }
+//  v8::Local<v8::Object>
+//  Iterator::NewInstance(v8::Local<v8::Object> database,
+//                        v8::Local<v8::Number> id,
+//                        v8::Local<v8::Object> optionsObj) {
 //
+//    Nan::EscapableHandleScope scope;
+//
+//    Nan::MaybeLocal<v8::Object> maybeInstance;
+//    v8::Local<v8::Object> instance;
+//    v8::Local<v8::FunctionTemplate> constructorHandle = Nan::New<
+//        v8::FunctionTemplate>(iterator_constructor);
+//
+//    if (optionsObj.IsEmpty()) {
+//      v8::Local<v8::Value> argv[2] = { database, id };
+//      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 2,
+//                                       argv);
+//    }
+//    else {
+//      v8::Local<v8::Value> argv[3] = { database, id, optionsObj };
+//      maybeInstance = Nan::NewInstance(constructorHandle->GetFunction(), 3,
+//                                       argv);
+//    }
+//
+//    if (maybeInstance.IsEmpty())
+//      Nan::ThrowError("Could not create new Iterator instance");
+//    else
+//      instance = maybeInstance.ToLocalChecked();
+//    return scope.Escape(instance);
+//  }
+
 //  NAN_METHOD(Iterator::New){
 //Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
 //
-//leveldb::Slice* start = NULL;
+//kudu::Slice* start = NULL;
 //std::string* end = NULL;
 //int limit = -1;
 //// default highWaterMark from Readble-streams
@@ -459,7 +459,7 @@ namespace leveldown {
 //    // ignore start if it has size 0 since a Slice can't have length 0
 //    if (StringOrBufferLength(startBuffer) > 0) {
 //      LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
-//      start = new leveldb::Slice(_startCh_, _startSz_);
+//      start = new kudu::Slice(_startCh_, _startSz_);
 //      startStr = _startCh_;
 //    }
 //  }
@@ -506,7 +506,7 @@ namespace leveldown {
 //        }
 //        if (start != NULL)
 //        delete start;
-//        start = new leveldb::Slice(lt->data(), lt->size());
+//        start = new kudu::Slice(lt->data(), lt->size());
 //      }
 //    }
 //  }
@@ -529,7 +529,7 @@ namespace leveldown {
 //        }
 //        if (start != NULL)
 //        delete start;
-//        start = new leveldb::Slice(lte->data(), lte->size());
+//        start = new kudu::Slice(lte->data(), lte->size());
 //      }
 //    }
 //  }
@@ -552,7 +552,7 @@ namespace leveldown {
 //        }
 //        if (start != NULL)
 //        delete start;
-//        start = new leveldb::Slice(gt->data(), gt->size());
+//        start = new kudu::Slice(gt->data(), gt->size());
 //      }
 //    }
 //  }
@@ -575,13 +575,13 @@ namespace leveldown {
 //        }
 //        if (start != NULL)
 //        delete start;
-//        start = new leveldb::Slice(gte->data(), gte->size());
+//        start = new kudu::Slice(gte->data(), gte->size());
 //      }
 //    }
 //  }
 //
 //}
-//
+
 //bool keys = BooleanOptionValue(optionsObj, "keys", true);
 //bool values = BooleanOptionValue(optionsObj, "values", true);
 //bool keyAsBuffer = BooleanOptionValue(optionsObj, "keyAsBuffer", true);
@@ -611,5 +611,6 @@ namespace leveldown {
 //info.GetReturnValue().Set(info.This());
 //}
 
-}
- // namespace leveldown
+
+
+} // namespace kududown
