@@ -4,17 +4,15 @@
 #include <vector>
 #include <node.h>
 
-
 #include "database.h"
+#include "write_batch.h"
 
 namespace kududown {
 
-  typedef void WriteBatch;
-
-  class Batch : public Nan::ObjectWrap
-  {
+  class Batch : public Nan::ObjectWrap {
   public:
-    static void Init();
+    static void
+    Init();
 
     static v8::Local<v8::Value>
     NewInstance(v8::Local<v8::Object> database,
@@ -23,7 +21,8 @@ namespace kududown {
     Batch(kududown::Database* database, bool sync);
     ~Batch();
 
-    kudu::Status Write();
+    kudu::Status
+    Write();
 
   private:
     kududown::Database* database;
@@ -32,12 +31,13 @@ namespace kududown {
     bool hasData; // keep track of whether we're writing data or not
 
     static NAN_METHOD(New);
-    static NAN_METHOD(Put);
-    static NAN_METHOD(Del);
-    static NAN_METHOD(Clear);
-    static NAN_METHOD(Write);
-  };
+  static NAN_METHOD(Put);
+  static NAN_METHOD(Del);
+  static NAN_METHOD(Clear);
+  static NAN_METHOD(Write);
+};
 
-} // namespace kududown
+}
+ // namespace kududown
 
 #endif

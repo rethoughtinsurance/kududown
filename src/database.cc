@@ -31,11 +31,37 @@ namespace kududown {
   /* Calls from worker threads, NO V8 HERE *****************************/
 
   kudu::Status
-  Database::OpenDatabase(Options* options) {
-    if (!options) {
+  Database::OpenDatabase(Options* opts) {
+    if (!opts) {
       return kudu::Status::InvalidArgument("Options cannot be empty");
     }
+    this->options = *opts;
 
+    kudu::Status kuduStatus = connect();
+
+    if (kuduStatus.ok()) {
+      if (opts->tableName.size()) {
+        return openTable(opts->tableName);
+      }
+    }
+    return kuduStatus;
+  }
+
+  kudu::Status
+  Database::openTable(std::string tableName) {
+    kudu::Status kuduStatus = kuduClientPtr->OpenTable(options.tableName,
+                                                       &table);
+    if (kuduStatus.ok()) {
+      std::cout << "Table OK" << std::endl;
+    }
+    else {
+      std::cout << "Table NOT OK" << std::endl;
+    }
+    return kuduStatus;
+  }
+
+  kudu::Status
+  Database::connect() {
     kudu::client::SetVerboseLogLevel(2);
 
     kudu::Status kuduStatus =
@@ -49,27 +75,6 @@ namespace kududown {
     }
     else {
       std::cout << "Client NOT OK" << std::endl;
-      return kuduStatus;
-    }
-
-    if (options->tableName.size()) {
-
-      kuduStatus = kuduClientPtr->OpenTable(options->tableName, &table);
-      if (kuduStatus.ok()) {
-        std::cout << "Table OK" << std::endl;
-      }
-      else {
-        std::cout << "Table NOT OK" << std::endl;
-        return kuduStatus;
-      }
-
-      std::cout << "TABLE OPENED" << std::endl;
-    }
-    if (options->createIfMissing == false) {
-      if (options->errorIfExists == true) {
-        return kudu::Status::RuntimeError("directory exists");
-      }
-      return kudu::Status::RuntimeError("directory does not exist");
     }
     return kuduStatus;
   }
@@ -183,7 +188,7 @@ namespace kududown {
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     Nan::SetPrototypeMethod(tpl, "open", Database::Open);
     Nan::SetPrototypeMethod(tpl, "close", Database::Close);
-//  Nan::SetPrototypeMethod(tpl, "put", Database::Put);
+    Nan::SetPrototypeMethod(tpl, "put", Database::Put);
 //  Nan::SetPrototypeMethod(tpl, "get", Database::Get);
 //  Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
 //  Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
@@ -269,16 +274,16 @@ namespace kududown {
 //NAN_METHOD(EmptyMethod) {
 //}
 //
-  NAN_METHOD(Database::Close){
-LD_METHOD_SETUP_COMMON_ONEARG(close)
+  NAN_METHOD(Database::Close) {
+  LD_METHOD_SETUP_COMMON_ONEARG(close)
 
-CloseWorker* worker = new CloseWorker(
-    database
-    , new Nan::Callback(callback)
-);
+  CloseWorker* worker = new CloseWorker(
+      database
+      , new Nan::Callback(callback)
+  );
 // persist to prevent accidental GC
-v8::Local<v8::Object> _this = info.This();
-worker->SaveToPersistent("database", _this);
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
 
 //  if (!database->iterators.empty()) {
 //    // yikes, we still have iterators open! naughty naughty.
@@ -318,35 +323,36 @@ worker->SaveToPersistent("database", _this);
 //  } else {
 //    Nan::AsyncQueueWorker(worker);
 //  }
+
+  Nan::AsyncQueueWorker(worker);
+}
+
+  NAN_METHOD(Database::Put) {
+LD_METHOD_SETUP_COMMON(put, 2, 3)
+
+v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
+LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
+LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
+
+bool sync = BooleanOptionValue(optionsObj, "sync");
+
+WriteWorker* worker = new WriteWorker(
+    database
+    , new Nan::Callback(callback)
+    , key
+    , value
+    , sync
+    , keyHandle
+    , valueHandle
+);
+
+// persist to prevent accidental GC
+v8::Local<v8::Object> _this = info.This();
+worker->SaveToPersistent("database", _this);
 Nan::AsyncQueueWorker(worker);
 }
-//
-//NAN_METHOD(Database::Put) {
-//  LD_METHOD_SETUP_COMMON(put, 2, 3)
-//
-//  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
-//  v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
-//  LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
-//  LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
-//
-//  bool sync = BooleanOptionValue(optionsObj, "sync");
-//
-//  WriteWorker* worker  = new WriteWorker(
-//      database
-//    , new Nan::Callback(callback)
-//    , key
-//    , value
-//    , sync
-//    , keyHandle
-//    , valueHandle
-//  );
-//
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//  Nan::AsyncQueueWorker(worker);
-//}
-//
+
 //NAN_METHOD(Database::Get) {
 //  LD_METHOD_SETUP_COMMON(get, 1, 2)
 //

@@ -12,6 +12,21 @@ namespace kududown {
         : tableName(tName), createIfMissing(false), errorIfExists(true) {
     }
 
+    Options(const Options& other) {
+      this->tableName = other.tableName;
+      this->createIfMissing = other.createIfMissing;
+      this->errorIfExists = other.errorIfExists;
+    }
+
+    Options& operator=(const Options& other) {
+      if (this != &other) {
+        this->tableName = other.tableName;
+        this->createIfMissing = other.createIfMissing;
+        this->errorIfExists = other.errorIfExists;
+      }
+      return *this;
+    }
+
     std::string tableName;
 
     // always false as this refers to a directory missing
