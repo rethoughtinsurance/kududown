@@ -118,4 +118,4 @@ KuduDOWN.repair = function (location, callback) {
 }
 
 // Do not export here, do it through index.ts
-//module.exports = KuduDOWN.default = KuduDOWN
+module.exports = KuduDOWN.default = KuduDOWN

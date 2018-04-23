@@ -12,9 +12,9 @@ console.log(`Top of index before kududown load`);
 
 // Must be commented until the kududown.node loads.
 // And we should probably change all of the names to kududown.
-const kududown = require('./kududown').kuduDOWN;
+const KuduDOWN = require('./kududown').KuduDOWN;
 
-export {kududown};
+export {KuduDOWN};
 
 export {kududownSchema, kuduTableDefs, KUDUDOWN_SCHEMA_TYPES,
   KuduDownSchemaAvscMap};
