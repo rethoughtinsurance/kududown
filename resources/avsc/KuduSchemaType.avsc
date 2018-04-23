@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "KuduSchemaType",
+  "namespace" : "org.kududown.avro",
+  "symbols" : [ "KuduScan", "KuduInsert", "KuduScanResult" ]
+}

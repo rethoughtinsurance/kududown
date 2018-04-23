@@ -1,4 +1,5 @@
 import * as kududownSchema from './ts/kududown-schema';
+import * as kuduTableDefs from './ts/kudu-table-defs';
 import {KUDUDOWN_SCHEMA_TYPES} from './ts/kududown-schema-types';
 import {KuduDownSchemaAvscMap} from './ts/kududown-avsc-obj';
 
@@ -14,7 +15,7 @@ console.log(`Top of index before kududown load`);
 // const kududown = require('./kududown').kuduDOWN;
 // export {kududown};
 
-export {kududownSchema, KUDUDOWN_SCHEMA_TYPES,
+export {kududownSchema, kuduTableDefs, KUDUDOWN_SCHEMA_TYPES,
   KuduDownSchemaAvscMap};
 
 

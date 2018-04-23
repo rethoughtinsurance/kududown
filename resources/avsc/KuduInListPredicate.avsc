@@ -1,0 +1,12 @@
+{
+  "type" : "record",
+  "name" : "KuduInListPredicate",
+  "namespace" : "org.kududown.avro",
+  "fields" : [ {
+    "name" : "valueList",
+    "type" : {
+      "type" : "array",
+      "items" : "string"
+    }
+  } ]
+}

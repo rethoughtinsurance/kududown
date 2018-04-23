@@ -1,0 +1,16 @@
+{
+  "type" : "record",
+  "name" : "KuduMessage",
+  "namespace" : "org.kududown.avro",
+  "fields" : [ {
+    "name" : "schemaType",
+    "type" : {
+      "type" : "enum",
+      "name" : "KuduSchemaType",
+      "symbols" : [ "KuduScan", "KuduInsert", "KuduScanResult" ]
+    }
+  }, {
+    "name" : "obj",
+    "type" : "bytes"
+  } ]
+}
