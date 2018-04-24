@@ -43,6 +43,10 @@ namespace kududown {
       if (opts->tableName.size()) {
         return openTable(opts->tableName);
       }
+      else {
+        //throw kudu::Status::InvalidArgument("A table name must be supplied");
+        return openTable("impala::rtip.rtip_test");
+      }
     }
     return kuduStatus;
   }
@@ -50,7 +54,7 @@ namespace kududown {
   kudu::Status
   Database::openTable(std::string tableName) {
     kudu::Status kuduStatus = kuduClientPtr->OpenTable(options.tableName,
-                                                       &table);
+                                                       &tablePtr);
     if (kuduStatus.ok()) {
       std::cout << "Table OK" << std::endl;
     }
@@ -82,7 +86,17 @@ namespace kududown {
   kudu::Status
   Database::PutToDatabase(WriteOptions* options, kudu::Slice key,
                           kudu::Slice value) {
-    //return db->Put(*options, key, value);
+
+//    if (kuduClientPtr == 0) {
+//      throw kudu::Status::RuntimeError("Not connected. Unable to perform write operation.")
+//    }
+//    if (tablePtr == 0) {
+//      throw kudu::Status::RuntimeError("Unable to open table.");
+//    }
+//      // open a session
+//      kudu::client::sp::shared_ptr<kudu::client::KuduSession> session = kuduClientPtr->NewSession();
+//      kudu::client::KuduUpsert upsert = tablePtr->NewUpsert();
+
     return kudu::Status::NotSupported("PutToDatabase not implemented");
   }
 
