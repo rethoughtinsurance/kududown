@@ -41,7 +41,7 @@ namespace kududown {
     kudu::Status kuduStatus = connect();
 
     if (kuduStatus.ok()) {
-      if (opts->tableName.size()) {
+      if (opts->tableName.size() > 0) {
         return openTable(opts->tableName);
       }
       else {
@@ -54,14 +54,16 @@ namespace kududown {
 
   kudu::Status
   Database::openTable(std::string tableName) {
-    kudu::Status kuduStatus = kuduClientPtr->OpenTable(options.tableName,
+    KUDU_LOG(INFO) << "Opening table " << tableName;
+    kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName,
                                                        &tablePtr);
     if (kuduStatus.ok()) {
-      std::cout << "Table OK" << std::endl;
+      KUDU_LOG(INFO) << "Table OK";
     }
     else {
-      std::cout << "Table NOT OK" << std::endl;
+      KUDU_LOG(ERROR) << kuduStatus.ToString() << "Table NOT OK";
     }
+    this->tableStatus = kuduStatus;
     return kuduStatus;
   }
 
@@ -76,10 +78,10 @@ namespace kududown {
 //  CHECK_OK(kuduStatus, "Unable to connect to Kudu Server", ExecutionException)
 
     if (kuduStatus.ok()) {
-      std::cout << "Client OK" << std::endl;
+      KUDU_LOG(INFO) << kuduStatus.ToString();
     }
     else {
-      std::cout << "Client NOT OK" << std::endl;
+      KUDU_LOG(ERROR) << kuduStatus.ToString();
     }
     return kuduStatus;
   }
@@ -93,7 +95,8 @@ namespace kududown {
           "Not connected. Unable to perform write operation.");
     }
     if (tablePtr == 0) {
-      return kudu::Status::RuntimeError("Unable to open table.");
+      KUDU_LOG(ERROR) << tableStatus.ToString();
+      return this->tableStatus;
     }
 
     // open a session
@@ -103,18 +106,22 @@ namespace kududown {
     kudu::KuduPartialRow* row = upsert->mutable_row();
     kudu::Status st = row->SetString(0, key);
     if (!st.ok()) {
-      KUDU_LOG(st.message());
+      KUDU_LOG(ERROR) << st.message();
       return st;
     }
     st = row->SetString(1, value);
     if (!st.ok()) {
+      KUDU_LOG(ERROR) << st.message();
       return st;
     }
 
     st = session->Apply(upsert);
     if (!st.ok()) {
+      KUDU_LOG(ERROR) << st.message();
       return st;
     }
+
+    return kudu::Status::OK();
     //return kudu::Status::NotSupported("PutToDatabase not implemented");
   }
 
@@ -139,7 +146,7 @@ namespace kududown {
 
   uint64_t
   Database::ApproximateSizeFromDatabase(/*const leveldb::Range* range*/) {
-    uint64_t size;
+    //uint64_t size;
     // JMB TODO
     //db->GetApproximateSizes(range, 1, &size);
     return 0;
@@ -264,7 +271,7 @@ namespace kududown {
   bool errorIfExists = BooleanOptionValue(optionsObj, "errorIfExists");
   bool compression = BooleanOptionValue(optionsObj, "compression", true);
 
-  uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
+  //uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
   uint32_t writeBufferSize = UInt32OptionValue(
       optionsObj
       , "writeBufferSize"

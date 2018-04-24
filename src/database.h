@@ -105,6 +105,8 @@ namespace kududown {
 
     Options options;
 
+    kudu::Status tableStatus;
+
     uint32_t currentIteratorId;
     void (*pendingCloseWorker);
     void* blockCache;
