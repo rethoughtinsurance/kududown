@@ -116,6 +116,9 @@ namespace kududown {
 
     kudu::Status connect();
     kudu::Status openTable(std::string);
+    kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
+                                 kudu::client::KuduColumnSchema::DataType type,
+                                 int index, std::string&);
 
     static void
     WriteDoing(uv_work_t *req);
@@ -126,8 +129,8 @@ namespace kududown {
   static NAN_METHOD(Open);
   static NAN_METHOD(Close);
   static NAN_METHOD(Put);
-//  static NAN_METHOD(Delete);
-//  static NAN_METHOD(Get);
+  static NAN_METHOD(Delete);
+  static NAN_METHOD(Get);
 //  static NAN_METHOD(Batch);
 //  static NAN_METHOD(Write);
 //  static NAN_METHOD(Iterator);

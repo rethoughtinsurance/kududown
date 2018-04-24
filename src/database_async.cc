@@ -91,49 +91,49 @@ namespace kududown {
     AsyncWorker::WorkComplete();
   }
 
-//  /** READ WORKER **/
-//
-//  ReadWorker::ReadWorker(/*Database *database, Nan::Callback *callback,
-//                         leveldb::Slice key, bool asBuffer, bool fillCache,
-//                         v8::Local<v8::Object> &keyHandle*/)
-//      : IOWorker(database, callback, key, keyHandle), asBuffer(asBuffer) {
-//    Nan::HandleScope scope;
-//
-//    options = new leveldb::ReadOptions();
-//    options->fill_cache = fillCache;
-//    SaveToPersistent("key", keyHandle);
-//  }
-//  ;
-//
-//  ReadWorker::~ReadWorker() {
-//    delete options;
-//  }
-//
-//  void
-//  ReadWorker::Execute() {
-//    SetStatus(database->GetFromDatabase(options, key, value));
-//  }
-//
-//  void
-//  ReadWorker::HandleOKCallback() {
-//    Nan::HandleScope scope;
-//
-//    v8::Local<v8::Value> returnValue;
-//    if (asBuffer) {
-//      //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
-//      //and avoid an an extra allocation. We'd have to clean up properly when not OK
-//      //and let the new Buffer manage the data when OK
-//      returnValue =
-//          Nan::CopyBuffer((char*) value.data(), value.size()).ToLocalChecked();
-//    }
-//    else {
-//      returnValue =
-//          Nan::New<v8::String>((char*) value.data(), value.size()).ToLocalChecked();
-//    }
-//    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
-//    callback->Call(2, argv);
-//  }
-//
+  /** READ WORKER **/
+
+  ReadWorker::ReadWorker(Database *database, Nan::Callback *callback,
+                         kudu::Slice key, bool asBuffer, bool fillCache,
+                         v8::Local<v8::Object> &keyHandle)
+      : IOWorker(database, callback, key, keyHandle), asBuffer(asBuffer) {
+    Nan::HandleScope scope;
+
+    options = new ReadOptions();
+    //options->fill_cache = fillCache;
+    SaveToPersistent("key", keyHandle);
+  }
+  ;
+
+  ReadWorker::~ReadWorker() {
+    delete options;
+  }
+
+  void
+  ReadWorker::Execute() {
+    SetStatus(database->GetFromDatabase(options, key, value));
+  }
+
+  void
+  ReadWorker::HandleOKCallback() {
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Value> returnValue;
+    if (asBuffer) {
+      //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
+      //and avoid an an extra allocation. We'd have to clean up properly when not OK
+      //and let the new Buffer manage the data when OK
+      returnValue =
+          Nan::CopyBuffer((char*) value.data(), value.size()).ToLocalChecked();
+    }
+    else {
+      returnValue =
+          Nan::New<v8::String>((char*) value.data(), value.size()).ToLocalChecked();
+    }
+    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
+    callback->Call(2, argv);
+  }
+
   /** DELETE WORKER **/
 
   DeleteWorker::DeleteWorker(Database *database, Nan::Callback *callback,

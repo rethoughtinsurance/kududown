@@ -17,6 +17,12 @@
 
 namespace kududown {
 
+#define CHECK_OK_OR_RETURN(status, message) \
+  if (!((status).ok())) { \
+    KUDU_LOG(ERROR) << (status).ToString(); \
+    return status; \
+  } \
+
   static Nan::Persistent<v8::FunctionTemplate> database_constructor;
 
   Database::Database(const v8::Local<v8::Value>& from)
@@ -54,9 +60,9 @@ namespace kududown {
 
   kudu::Status
   Database::openTable(std::string tableName) {
-    KUDU_LOG(INFO) << "Opening table " << tableName;
+    KUDU_LOG(INFO)<< "Opening table " << tableName;
     kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName,
-                                                       &tablePtr);
+        &tablePtr);
     if (kuduStatus.ok()) {
       KUDU_LOG(INFO) << "Table OK";
     }
@@ -75,10 +81,8 @@ namespace kududown {
         kudu::client::KuduClientBuilder().add_master_server_addr("192.168.1.3").Build(
             &kuduClientPtr);
 
-//  CHECK_OK(kuduStatus, "Unable to connect to Kudu Server", ExecutionException)
-
     if (kuduStatus.ok()) {
-      KUDU_LOG(INFO) << kuduStatus.ToString();
+      KUDU_LOG(INFO)<< kuduStatus.ToString();
     }
     else {
       KUDU_LOG(ERROR) << kuduStatus.ToString();
@@ -95,7 +99,7 @@ namespace kududown {
           "Not connected. Unable to perform write operation.");
     }
     if (tablePtr == 0) {
-      KUDU_LOG(ERROR) << tableStatus.ToString();
+      KUDU_LOG(ERROR)<< tableStatus.ToString();
       return this->tableStatus;
     }
 
@@ -106,89 +110,256 @@ namespace kududown {
     kudu::KuduPartialRow* row = upsert->mutable_row();
     kudu::Status st = row->SetString(0, key);
     if (!st.ok()) {
-      KUDU_LOG(ERROR) << st.message();
+      KUDU_LOG(ERROR)<< st.message();
       return st;
     }
     st = row->SetString(1, value);
     if (!st.ok()) {
-      KUDU_LOG(ERROR) << st.message();
+      KUDU_LOG(ERROR)<< st.message();
       return st;
     }
 
     st = session->Apply(upsert);
     if (!st.ok()) {
-      KUDU_LOG(ERROR) << st.message();
+      KUDU_LOG(ERROR)<< st.message();
       return st;
     }
 
     return kudu::Status::OK();
-    //return kudu::Status::NotSupported("PutToDatabase not implemented");
   }
 
   kudu::Status
   Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
                             std::string& value) {
-    //return db->Get(*options, key, &value);
-    return kudu::Status::NotSupported("GetFromDatabase not implemented");
+    if (kuduClientPtr == 0) {
+      return kudu::Status::RuntimeError(
+          "Not connected. Unable to perform write operation.");
+    }
+    if (tablePtr == 0) {
+      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      return this->tableStatus;
+    }
+
+    kudu::client::KuduScanner scanner(tablePtr.get());
+
+    // make a predicate for <tableName>.key column and get a value
+    // equal to the passed in key
+    kudu::client::KuduPredicate* p = tablePtr->NewComparisonPredicate(
+        "key", kudu::client::KuduPredicate::ComparisonOp::EQUAL,
+        kudu::client::KuduValue::CopyString(key));
+
+    scanner.AddConjunctPredicate(p);
+
+    scanner.KeepAlive();
+    kudu::Status st = scanner.Open();
+
+    std::string msg("Unable to get table scanner: ");
+    msg.append(st.ToString());
+
+    CHECK_OK_OR_RETURN(st, msg);
+
+    kudu::client::KuduScanBatch batch;
+
+    int num_rows = 0;
+
+    while (scanner.HasMoreRows()) {
+      scanner.NextBatch(&batch);
+      num_rows += batch.NumRows();
+
+      // TODO num_rows > 1 ??
+      kudu::client::KuduSchema schema = scanner.GetProjectionSchema();
+
+      for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
+          it != batch.end(); ++it) {
+
+        kudu::client::KuduScanBatch::RowPtr row(*it);
+
+        for (size_t x = 0; x < schema.num_columns(); ++x) {
+          std::string str;
+          kudu::Status st =
+              getSliceAsString(row, schema.Column(x).type(), x, str);
+          value = str;
+        }
+      }
+    }
+    return kudu::Status::OK();
+  }
+
+
+  kudu::Status
+  Database::getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
+                             kudu::client::KuduColumnSchema::DataType type,
+                             int index, std::string &output) {
+
+    kudu::Slice slice;
+
+    switch (type) {
+      case kudu::client::KuduColumnSchema::DataType::BINARY: {
+        kudu::Status st = row.GetBinary(index, &slice);
+        if (!st.ok()) {
+          return st;
+        }
+        output = slice.ToString();
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::BOOL: {
+        bool b;
+        kudu::Status st = row.GetBool(index, &b);
+        if (!st.ok()) {
+          return st;
+        }
+        output = slice.ToString();
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::DOUBLE: {
+        double d;
+        kudu::Status st = row.GetDouble(index, &d);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%g", d);
+        output = tmp;
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::FLOAT: {
+        float flt;
+        kudu::Status st = row.GetFloat(index, &flt);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%g", flt);
+        output = tmp;
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::INT16: {
+        short int i;
+        kudu::Status st = row.GetInt16(index, &i);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%hd", i);
+        output = tmp;
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::INT32: {
+        int32_t i32;
+        kudu::Status st = row.GetInt32(index, &i32);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%d", i32);
+        output = tmp;
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::INT64: {
+        int64_t bigint;
+        kudu::Status st = row.GetInt64(index, &bigint);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%ld", bigint);
+        output = tmp;
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::INT8: {
+        signed char i;
+        kudu::Status st = row.GetInt8(index, &i);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%.1s", &i);
+        output = tmp;
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::STRING: {
+        kudu::Status st = row.GetString(index, &slice);
+        if (!st.ok()) {
+          return st;
+        }
+        output = slice.ToString();
+        return st;
+      }
+      case kudu::client::KuduColumnSchema::DataType::UNIXTIME_MICROS: {
+        int64_t theTime;
+
+        kudu::Status st = row.GetUnixTimeMicros(index, &theTime);
+        if (!st.ok()) {
+          return st;
+        }
+        char tmp[512];
+        sprintf(tmp, "%ld", theTime);
+        output = tmp;
+        return st;
+      }
+      default:
+        return kudu::Status::NotFound("No convertion for datatype "
+            + kudu::client::KuduColumnSchema::DataTypeToString(type));
+    }
   }
 
   kudu::Status
   Database::DeleteFromDatabase(WriteOptions* options, kudu::Slice key) {
-    //return db->Delete(*options, key);
+
     return kudu::Status::NotSupported("DeleteFromDatabase not implemented");
   }
 
   kudu::Status
-  Database::WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch) {
-    //return db->Write(*options, batch);
+  Database::WriteBatchToDatabase(WriteOptions * options, WriteBatch * batch) {
+//return db->Write(*options, batch);
     return kudu::Status::NotSupported("WriteBatchToDatabase not implemented");
   }
 
   uint64_t
   Database::ApproximateSizeFromDatabase(/*const leveldb::Range* range*/) {
-    //uint64_t size;
-    // JMB TODO
-    //db->GetApproximateSizes(range, 1, &size);
+//uint64_t size;
+// JMB TODO
+//db->GetApproximateSizes(range, 1, &size);
     return 0;
   }
 
   void
   Database::CompactRangeFromDatabase(/*const leveldb::Slice* start,
    const leveldb::Slice* end*/) {
-    //db->CompactRange(start, end);
+//db->CompactRange(start, end);
   }
 
   void
   Database::GetPropertyFromDatabase(/*const leveldb::Slice& property,
    std::string* value*/) {
 
-    //db->GetProperty(property, value);
+//db->GetProperty(property, value);
   }
 
 //leveldb::Iterator*
   void
   Database::NewIterator(/*leveldb::ReadOptions* options*/) {
-    //return db->NewIterator(*options);
+//return db->NewIterator(*options);
   }
 
 //const leveldb::Snapshot*
   void
   Database::NewSnapshot() {
-    //return db->GetSnapshot();
+//return db->GetSnapshot();
   }
 
   void
   Database::ReleaseSnapshot(/*const leveldb::Snapshot* snapshot*/) {
-    //return db->ReleaseSnapshot(snapshot);
+//return db->ReleaseSnapshot(snapshot);
   }
 
   void
   Database::ReleaseIterator(uint32_t id) {
-    // called each time an Iterator is End()ed, in the main thread
-    // we have to remove our reference to it and if it's the last iterator
-    // we have to invoke a pending CloseWorker if there is one
-    // if there is a pending CloseWorker it means that we're waiting for
-    // iterators to end before we can close them
+// called each time an Iterator is End()ed, in the main thread
+// we have to remove our reference to it and if it's the last iterator
+// we have to invoke a pending CloseWorker if there is one
+// if there is a pending CloseWorker it means that we're waiting for
+// iterators to end before we can close them
 
 //    iterators.erase(id);
 //    if (iterators.empty() && pendingCloseWorker != NULL) {
@@ -228,8 +399,8 @@ namespace kududown {
     Nan::SetPrototypeMethod(tpl, "open", Database::Open);
     Nan::SetPrototypeMethod(tpl, "close", Database::Close);
     Nan::SetPrototypeMethod(tpl, "put", Database::Put);
-//  Nan::SetPrototypeMethod(tpl, "get", Database::Get);
-//  Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
+    Nan::SetPrototypeMethod(tpl, "get", Database::Get);
+    Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
 //  Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
 //  Nan::SetPrototypeMethod(tpl, "approximateSize", Database::ApproximateSize);
 //  Nan::SetPrototypeMethod(tpl, "compactRange", Database::CompactRange);
@@ -271,7 +442,7 @@ namespace kududown {
   bool errorIfExists = BooleanOptionValue(optionsObj, "errorIfExists");
   bool compression = BooleanOptionValue(optionsObj, "compression", true);
 
-  //uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
+//uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
   uint32_t writeBufferSize = UInt32OptionValue(
       optionsObj
       , "writeBufferSize"
@@ -286,8 +457,8 @@ namespace kududown {
   );
   uint32_t maxFileSize = UInt32OptionValue(optionsObj, "maxFileSize", 2 << 20);
 
-  //database->blockCache = leveldb::NewLRUCache(cacheSize);
-  //database->filterPolicy = leveldb::NewBloomFilterPolicy(10);
+//database->blockCache = leveldb::NewLRUCache(cacheSize);
+//database->filterPolicy = leveldb::NewBloomFilterPolicy(10);
 
   OpenWorker* worker = new OpenWorker(
       database
@@ -303,7 +474,7 @@ namespace kududown {
       , blockRestartInterval
       , maxFileSize
   );
-  // persist to prevent accidental GC
+// persist to prevent accidental GC
   v8::Local<v8::Object> _this = info.This();
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
@@ -367,75 +538,75 @@ namespace kududown {
 }
 
   NAN_METHOD(Database::Put){
-LD_METHOD_SETUP_COMMON(put, 2, 3)
+  LD_METHOD_SETUP_COMMON(put, 2, 3)
+
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+  v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
+  LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
+  LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
+
+  bool sync = BooleanOptionValue(optionsObj, "sync");
+
+  WriteWorker* worker = new WriteWorker(
+      database
+      , new Nan::Callback(callback)
+      , key
+      , value
+      , sync
+      , keyHandle
+      , valueHandle
+  );
+
+// persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
+  Nan::AsyncQueueWorker(worker);
+}
+
+  NAN_METHOD(Database::Get){
+  LD_METHOD_SETUP_COMMON(get, 1, 2)
+
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+  LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
+
+  bool asBuffer = BooleanOptionValue(optionsObj, "asBuffer", true);
+  bool fillCache = BooleanOptionValue(optionsObj, "fillCache", true);
+
+  ReadWorker* worker = new ReadWorker(
+      database
+      , new Nan::Callback(callback)
+      , key
+      , asBuffer
+      , fillCache
+      , keyHandle
+  );
+// persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
+  Nan::AsyncQueueWorker(worker);
+}
+
+  NAN_METHOD(Database::Delete){
+LD_METHOD_SETUP_COMMON(del, 1, 2)
 
 v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
-v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
 LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
-LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
 
 bool sync = BooleanOptionValue(optionsObj, "sync");
 
-WriteWorker* worker = new WriteWorker(
+DeleteWorker* worker = new DeleteWorker(
     database
     , new Nan::Callback(callback)
     , key
-    , value
     , sync
     , keyHandle
-    , valueHandle
 );
-
 // persist to prevent accidental GC
 v8::Local<v8::Object> _this = info.This();
 worker->SaveToPersistent("database", _this);
 Nan::AsyncQueueWorker(worker);
 }
 
-//NAN_METHOD(Database::Get) {
-//  LD_METHOD_SETUP_COMMON(get, 1, 2)
-//
-//  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
-//  LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
-//
-//  bool asBuffer = BooleanOptionValue(optionsObj, "asBuffer", true);
-//  bool fillCache = BooleanOptionValue(optionsObj, "fillCache", true);
-//
-//  ReadWorker* worker = new ReadWorker(
-//      database
-//    , new Nan::Callback(callback)
-//    , key
-//    , asBuffer
-//    , fillCache
-//    , keyHandle
-//  );
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//  Nan::AsyncQueueWorker(worker);
-//}
-//
-//NAN_METHOD(Database::Delete) {
-//  LD_METHOD_SETUP_COMMON(del, 1, 2)
-//
-//  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
-//  LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
-//
-//  bool sync = BooleanOptionValue(optionsObj, "sync");
-//
-//  DeleteWorker* worker = new DeleteWorker(
-//      database
-//    , new Nan::Callback(callback)
-//    , key
-//    , sync
-//    , keyHandle
-//  );
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//  Nan::AsyncQueueWorker(worker);
-//}
-//
 //NAN_METHOD(Database::Batch) {
 //  if ((info.Length() == 0 || info.Length() == 1) && !info[0]->IsArray()) {
 //    v8::Local<v8::Object> optionsObj;
@@ -607,4 +778,4 @@ Nan::AsyncQueueWorker(worker);
 //}
 
 }
-  // namespace kududown
+    // namespace kududown

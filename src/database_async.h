@@ -57,26 +57,23 @@ namespace kududown {
     kudu::Slice key;
   };
 
-//class ReadWorker : public IOWorker {
-//public:
-//  ReadWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::Slice key
-//    , bool asBuffer
-//    , bool fillCache
-//    , v8::Local<v8::Object> &keyHandle
-//  );
-//
-//  virtual ~ReadWorker ();
-//  virtual void Execute ();
-//  virtual void HandleOKCallback ();
-//
-//private:
-//  bool asBuffer;
-//  leveldb::ReadOptions* options;
-//  std::string value;
-//};
+  class ReadWorker : public IOWorker {
+  public:
+    ReadWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+               bool asBuffer, bool fillCache, v8::Local<v8::Object> &keyHandle);
+
+    virtual
+    ~ReadWorker();
+    virtual void
+    Execute();
+    virtual void
+    HandleOKCallback();
+
+  private:
+    bool asBuffer;
+    ReadOptions* options;
+    std::string value;
+  };
 
   class DeleteWorker : public IOWorker {
   public:

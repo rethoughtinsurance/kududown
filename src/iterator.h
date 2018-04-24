@@ -97,3 +97,55 @@ namespace kududown {
  // namespace kududown
 
 #endif
+
+
+/*
+    if (kuduClientPtr == 0) {
+      return kudu::Status::RuntimeError(
+          "Not connected. Unable to perform write operation.");
+    }
+    if (tablePtr == 0) {
+      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      return this->tableStatus;
+    }
+
+    kudu::client::KuduScanner scanner(tablePtr.get());
+
+    //addPredicates(scanner, predicates);
+
+    scanner.KeepAlive();
+    kudu::Status st = scanner.Open();
+
+    std::string msg("Unable to get table scanner: ");
+    msg.append(st.ToString());
+
+    CHECK_OK_OR_RETURN(st, msg);
+
+    kudu::client::KuduScanBatch batch;
+
+    int num_rows = 0;
+
+    while (scanner.HasMoreRows()) {
+      scanner.NextBatch(&batch);
+      num_rows += batch.NumRows();
+      kudu::client::KuduSchema schema = scanner.GetProjectionSchema();
+
+      for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
+          it != batch.end(); ++it) {
+
+        kudu::client::KuduScanBatch::RowPtr row(*it);
+        std::string newRow;
+
+        for (size_t x = 0; x < schema.num_columns(); ++x) {
+          std::string str;
+          kudu::Status st = getSliceAsString(row, schema.Column(x).type(), x,
+                                             str);
+          newRow.append(str);
+          if (x + 1 < schema.num_columns())
+            newRow.append(",");
+        }
+
+        //resultSet.resultRows.push_back(newRow);
+      }
+    }
+ */
