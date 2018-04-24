@@ -69,29 +69,28 @@ namespace kududown {
     delete callback;
     callback = NULL;
   }
-//
-//  /** IO WORKER (abstract) **/
-//
-//  IOWorker::IOWorker(/*Database *database, Nan::Callback *callback,
-//                     leveldb::Slice key, v8::Local<v8::Object> &keyHandle*/)
-//      : AsyncWorker(database, callback), /*key(key)*/ {
-//    Nan::HandleScope scope;
-//
-//    //SaveToPersistent("key", keyHandle);
-//  }
-//  ;
-//
-//  IOWorker::~IOWorker() {
-//  }
-//
-//  void
-//  IOWorker::WorkComplete() {
-//    Nan::HandleScope scope;
-//
-//    //DisposeStringOrBufferFromSlice(GetFromPersistent("key"), key);
-//    AsyncWorker::WorkComplete();
-//  }
-//
+
+  /** IO WORKER (abstract) **/
+
+  IOWorker::IOWorker(Database *database, Nan::Callback *callback,
+                     kudu::Slice key, v8::Local<v8::Object> &keyHandle)
+      : AsyncWorker(database, callback), key(key) {
+    Nan::HandleScope scope;
+
+    //SaveToPersistent("key", keyHandle);
+  }
+
+  IOWorker::~IOWorker() {
+  }
+
+  void
+  IOWorker::WorkComplete() {
+    Nan::HandleScope scope;
+
+    DisposeStringOrBufferFromSlice(GetFromPersistent("key"), key);
+    AsyncWorker::WorkComplete();
+  }
+
 //  /** READ WORKER **/
 //
 //  ReadWorker::ReadWorker(/*Database *database, Nan::Callback *callback,
@@ -135,58 +134,57 @@ namespace kududown {
 //    callback->Call(2, argv);
 //  }
 //
-//  /** DELETE WORKER **/
-//
-//  DeleteWorker::DeleteWorker(Database *database, Nan::Callback *callback,
-//                             leveldb::Slice key, bool sync,
-//                             v8::Local<v8::Object> &keyHandle)
-//      : IOWorker(database, callback, key, keyHandle) {
-//    Nan::HandleScope scope;
-//
-//    options = new leveldb::WriteOptions();
-//    options->sync = sync;
-//    SaveToPersistent("key", keyHandle);
-//  }
-//  ;
-//
-//  DeleteWorker::~DeleteWorker() {
-//    delete options;
-//  }
-//
-//  void
-//  DeleteWorker::Execute() {
-//    SetStatus(database->DeleteFromDatabase(options, key));
-//  }
-//
-//  /** WRITE WORKER **/
-//
-//  WriteWorker::WriteWorker(Database *database, Nan::Callback *callback,
-//                           leveldb::Slice key, leveldb::Slice value, bool sync,
-//                           v8::Local<v8::Object> &keyHandle,
-//                           v8::Local<v8::Object> &valueHandle)
-//      : DeleteWorker(database, callback, key, sync, keyHandle), value(value) {
-//    Nan::HandleScope scope;
-//
-//    SaveToPersistent("value", valueHandle);
-//  }
-//  ;
-//
-//  WriteWorker::~WriteWorker() {
-//  }
-//
-//  void
-//  WriteWorker::Execute() {
-//    SetStatus(database->PutToDatabase(options, key, value));
-//  }
-//
-//  void
-//  WriteWorker::WorkComplete() {
-//    Nan::HandleScope scope;
-//
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("value"), value);
-//    IOWorker::WorkComplete();
-//  }
-//
+  /** DELETE WORKER **/
+
+  DeleteWorker::DeleteWorker(Database *database, Nan::Callback *callback,
+                             kudu::Slice key, bool sync,
+                             v8::Local<v8::Object> &keyHandle)
+      : IOWorker(database, callback, key, keyHandle) {
+    Nan::HandleScope scope;
+
+    options = new WriteOptions();
+    //options->sync = sync;
+    SaveToPersistent("key", keyHandle);
+  }
+  ;
+
+  DeleteWorker::~DeleteWorker() {
+    delete options;
+  }
+
+  void
+  DeleteWorker::Execute() {
+    SetStatus(database->DeleteFromDatabase(options, key));
+  }
+
+  /** WRITE WORKER **/
+
+  WriteWorker::WriteWorker(Database *database, Nan::Callback *callback,
+                           kudu::Slice key, kudu::Slice value, bool sync,
+                           v8::Local<v8::Object> &keyHandle,
+                           v8::Local<v8::Object> &valueHandle)
+      : DeleteWorker(database, callback, key, sync, keyHandle), value(value) {
+    Nan::HandleScope scope;
+
+    SaveToPersistent("value", valueHandle);
+  }
+
+  WriteWorker::~WriteWorker() {
+  }
+
+  void
+  WriteWorker::Execute() {
+    SetStatus(database->PutToDatabase(options, key, value));
+  }
+
+  void
+  WriteWorker::WorkComplete() {
+    Nan::HandleScope scope;
+
+    DisposeStringOrBufferFromSlice(GetFromPersistent("value"), value);
+    IOWorker::WorkComplete();
+  }
+
 //  /** BATCH WORKER **/
 //
 //  BatchWorker::BatchWorker(Database *database, Nan::Callback *callback,
@@ -292,4 +290,4 @@ namespace kududown {
 //    callback->Call(1, argv);
 //  }
 
-} // namespace kududown
+}// namespace kududown

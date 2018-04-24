@@ -9,62 +9,53 @@
 #include <vector>
 #include <node.h>
 
-
+#include "kuduoptions.h"
 #include "async.h"
 
 namespace kududown {
 
-class OpenWorker : public AsyncWorker {
-public:
-  OpenWorker (
-      Database *database
-    , Nan::Callback *callback
-    , void* blockCache
-    , const void* filterPolicy
-    , bool createIfMissing
-    , bool errorIfExists
-    , bool compression
-    , uint32_t writeBufferSize
-    , uint32_t blockSize
-    , uint32_t maxOpenFiles
-    , uint32_t blockRestartInterval
-    , uint32_t maxFileSize
-  );
+  class OpenWorker : public AsyncWorker {
+  public:
+    OpenWorker(Database *database, Nan::Callback *callback, void* blockCache,
+               const void* filterPolicy, bool createIfMissing,
+               bool errorIfExists, bool compression, uint32_t writeBufferSize,
+               uint32_t blockSize, uint32_t maxOpenFiles,
+               uint32_t blockRestartInterval, uint32_t maxFileSize);
 
-  virtual ~OpenWorker ();
-  virtual void Execute ();
+    virtual
+    ~OpenWorker();
+    virtual void
+    Execute();
 
-private:
-  Options* options;
-};
+  private:
+    Options* options;
+  };
 
-class CloseWorker : public AsyncWorker {
-public:
-  CloseWorker (
-      Database *database
-    , Nan::Callback *callback
-  );
+  class CloseWorker : public AsyncWorker {
+  public:
+    CloseWorker(Database *database, Nan::Callback *callback);
 
-  virtual ~CloseWorker ();
-  virtual void Execute ();
-  virtual void WorkComplete ();
-};
+    virtual
+    ~CloseWorker();
+    virtual void
+    Execute();
+    virtual void
+    WorkComplete();
+  };
 
-class IOWorker    : public AsyncWorker {
-public:
-  IOWorker (
-      Database *database
-    , Nan::Callback *callback
-    , kudu::Slice key
-    , v8::Local<v8::Object> &keyHandle
-  );
+  class IOWorker : public AsyncWorker {
+  public:
+    IOWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+             v8::Local<v8::Object> &keyHandle);
 
-  virtual ~IOWorker ();
-  virtual void WorkComplete ();
+    virtual
+    ~IOWorker();
+    virtual void
+    WorkComplete();
 
-protected:
-  kudu::Slice key;
-};
+  protected:
+    kudu::Slice key;
+  };
 
 //class ReadWorker : public IOWorker {
 //public:
@@ -86,44 +77,38 @@ protected:
 //  leveldb::ReadOptions* options;
 //  std::string value;
 //};
-//
-//class DeleteWorker : public IOWorker {
-//public:
-//  DeleteWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::Slice key
-//    , bool sync
-//    , v8::Local<v8::Object> &keyHandle
-//  );
-//
-//  virtual ~DeleteWorker ();
-//  virtual void Execute ();
-//
-//protected:
-//  leveldb::WriteOptions* options;
-//};
-//
-//class WriteWorker : public DeleteWorker {
-//public:
-//  WriteWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::Slice key
-//    , leveldb::Slice value
-//    , bool sync
-//    , v8::Local<v8::Object> &keyHandle
-//    , v8::Local<v8::Object> &valueHandle
-//  );
-//
-//  virtual ~WriteWorker ();
-//  virtual void Execute ();
-//  virtual void WorkComplete ();
-//
-//private:
-//  leveldb::Slice value;
-//};
-//
+
+  class DeleteWorker : public IOWorker {
+  public:
+    DeleteWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+                 bool sync, v8::Local<v8::Object> &keyHandle);
+
+    virtual
+    ~DeleteWorker();
+    virtual void
+    Execute();
+
+  protected:
+    WriteOptions* options;
+  };
+
+  class WriteWorker : public DeleteWorker {
+  public:
+    WriteWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+                kudu::Slice value, bool sync, v8::Local<v8::Object> &keyHandle,
+                v8::Local<v8::Object> &valueHandle);
+
+    virtual
+    ~WriteWorker();
+    virtual void
+    Execute();
+    virtual void
+    WorkComplete();
+
+  private:
+    kudu::Slice value;
+  };
+
 //class BatchWorker : public AsyncWorker {
 //public:
 //  BatchWorker (
@@ -183,7 +168,6 @@ protected:
 //    leveldb::Slice rangeEnd;
 //};
 
-
-} // namespace kududown
+}// namespace kududown
 
 #endif

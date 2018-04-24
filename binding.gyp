@@ -22,15 +22,16 @@
             ,  "include_dirs"  : [
                   "deps/kudu/linux/include"
                ]
+            , 'libraries': [ '-Wl,-rpath,/home/janet/git/kududown/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
           }]
         , ['OS == "mac"', {
-              'cflags': [
-              ]
-            , 'cflags': []
+              'cflags': []
+            , 'ldflags': []
             ,  "include_dirs"  : [
                   "deps/kudu/mac/include",
                   "deps/kudu/mac/include/kudu"
                ]
+            , 'libraries': [ '-Wl,-rpath,/home/janet/git/kududown/deps/kudu/mac/lib', '-Wl,-lkudu_client' ]
           }]
         , ['OS == "android"', {
               'cflags': [ '-fPIC' ]

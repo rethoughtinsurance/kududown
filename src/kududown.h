@@ -68,7 +68,7 @@ static inline void DisposeStringOrBufferFromSlice(
       , NULL, v8::String::NO_NULL_TERMINATION                                  \
     );                                                                         \
   }                                                                            \
-  leveldb::Slice to(to ## Ch_, to ## Sz_);
+  kudu::Slice to(to ## Ch_, to ## Sz_);
 
 #define LD_STRING_OR_BUFFER_TO_COPY(to, from, name)                            \
   size_t to ## Sz_;                                                            \

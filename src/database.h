@@ -103,12 +103,17 @@ namespace kududown {
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
     kudu::client::sp::shared_ptr<kudu::client::KuduTable> table;
 
+    Options options;
+
     uint32_t currentIteratorId;
     void (*pendingCloseWorker);
     void* blockCache;
     void* filterPolicy;
 
     //std::map<uint32_t, kududown::Iterator *> iterators;
+
+    kudu::Status connect();
+    kudu::Status openTable(std::string);
 
     static void
     WriteDoing(uv_work_t *req);
@@ -118,7 +123,7 @@ namespace kududown {
     static NAN_METHOD(New);
   static NAN_METHOD(Open);
   static NAN_METHOD(Close);
-//  static NAN_METHOD(Put);
+  static NAN_METHOD(Put);
 //  static NAN_METHOD(Delete);
 //  static NAN_METHOD(Get);
 //  static NAN_METHOD(Batch);
