@@ -6,7 +6,7 @@
   * directly, we check for a command-line argument.
   */
 const testCommon = require('abstract-leveldown/testCommon')
-    , leveldown  = require('..')
+    , leveldown  = require('../ts/lib/kududown')
 
 if (process.argv[2] == 'run') {
   testCommon.cleanup(function () {

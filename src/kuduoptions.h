@@ -35,11 +35,11 @@ namespace kududown {
     bool errorIfExists;
   };
 
-  struct WriteOptions {
+  struct WriteOptions : public Options {
     // none available
   };
 
-  struct ReadOptions {
+  struct ReadOptions : public Options {
     // none available
   };
 

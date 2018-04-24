@@ -1,6 +1,6 @@
 const BUFFERS = false
 
-var leveldown = require('..')
+var leveldown = require('../ts/lib/kududown')
   , crypto    = require('crypto')
   , putCount  = 0
   , getCount  = 0

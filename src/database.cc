@@ -366,16 +366,15 @@ namespace kududown {
   }
 
   void
-  Database::GetPropertyFromDatabase(/*const leveldb::Slice& property,
-   std::string* value*/) {
-
-//db->GetProperty(property, value);
+  Database::GetPropertyFromDatabase(const kudu::Slice& property,
+   std::string* value) {
+    *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 
-//leveldb::Iterator*
-  void
-  Database::NewIterator(/*leveldb::ReadOptions* options*/) {
-//return db->NewIterator(*options);
+  Iterator*
+  Database::NewIterator(ReadOptions* options) {
+    //return db->NewIterator(*options);
+    return new Iterator(options);
   }
 
 //const leveldb::Snapshot*
@@ -437,10 +436,10 @@ namespace kududown {
     Nan::SetPrototypeMethod(tpl, "put", Database::Put);
     Nan::SetPrototypeMethod(tpl, "get", Database::Get);
     Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
-//  Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
-//  Nan::SetPrototypeMethod(tpl, "approximateSize", Database::ApproximateSize);
+    Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
+    Nan::SetPrototypeMethod(tpl, "approximateSize", Database::ApproximateSize);
 //  Nan::SetPrototypeMethod(tpl, "compactRange", Database::CompactRange);
-//  Nan::SetPrototypeMethod(tpl, "getProperty", Database::GetProperty);
+    Nan::SetPrototypeMethod(tpl, "getProperty", Database::GetProperty);
 //  Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
   }
 
@@ -643,95 +642,95 @@ worker->SaveToPersistent("database", _this);
 Nan::AsyncQueueWorker(worker);
 }
 
-//NAN_METHOD(Database::Batch) {
-//  if ((info.Length() == 0 || info.Length() == 1) && !info[0]->IsArray()) {
-//    v8::Local<v8::Object> optionsObj;
-//    if (info.Length() > 0 && info[0]->IsObject()) {
-//      optionsObj = info[0].As<v8::Object>();
-//    }
-//    info.GetReturnValue().Set(Batch::NewInstance(info.This(), optionsObj));
-//    return;
-//  }
-//
-//  LD_METHOD_SETUP_COMMON(batch, 1, 2);
-//
-//  bool sync = BooleanOptionValue(optionsObj, "sync");
-//
-//  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(info[0]);
-//
-//  leveldb::WriteBatch* batch = new leveldb::WriteBatch();
-//  bool hasData = false;
-//
-//  for (unsigned int i = 0; i < array->Length(); i++) {
-//    if (!array->Get(i)->IsObject())
-//      continue;
-//
-//    v8::Local<v8::Object> obj = v8::Local<v8::Object>::Cast(array->Get(i));
-//    v8::Local<v8::Value> keyBuffer = obj->Get(Nan::New("key").ToLocalChecked());
-//    v8::Local<v8::Value> type = obj->Get(Nan::New("type").ToLocalChecked());
-//
-//    if (type->StrictEquals(Nan::New("del").ToLocalChecked())) {
-//      LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
-//
-//      batch->Delete(key);
-//      if (!hasData)
-//        hasData = true;
-//
-//      DisposeStringOrBufferFromSlice(keyBuffer, key);
-//    } else if (type->StrictEquals(Nan::New("put").ToLocalChecked())) {
-//      v8::Local<v8::Value> valueBuffer = obj->Get(Nan::New("value").ToLocalChecked());
-//
-//      LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
-//      LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
-//      batch->Put(key, value);
-//      if (!hasData)
-//        hasData = true;
-//
-//      DisposeStringOrBufferFromSlice(keyBuffer, key);
-//      DisposeStringOrBufferFromSlice(valueBuffer, value);
-//    }
-//  }
-//
-//  // don't allow an empty batch through
-//  if (hasData) {
-//    BatchWorker* worker = new BatchWorker(
-//        database
-//      , new Nan::Callback(callback)
-//      , batch
-//      , sync
-//    );
-//    // persist to prevent accidental GC
-//    v8::Local<v8::Object> _this = info.This();
-//    worker->SaveToPersistent("database", _this);
-//    Nan::AsyncQueueWorker(worker);
-//  } else {
-//    LD_RUN_CALLBACK(callback, 0, NULL);
-//  }
-//}
-//
-//NAN_METHOD(Database::ApproximateSize) {
-//  v8::Local<v8::Object> startHandle = info[0].As<v8::Object>();
-//  v8::Local<v8::Object> endHandle = info[1].As<v8::Object>();
-//
-//  LD_METHOD_SETUP_COMMON(approximateSize, -1, 2)
-//
-//  LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
-//  LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
-//
-//  ApproximateSizeWorker* worker  = new ApproximateSizeWorker(
-//      database
-//    , new Nan::Callback(callback)
-//    , start
-//    , end
-//    , startHandle
-//    , endHandle
-//  );
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//  Nan::AsyncQueueWorker(worker);
-//}
-//
+NAN_METHOD(Database::Batch) {
+  if ((info.Length() == 0 || info.Length() == 1) && !info[0]->IsArray()) {
+    v8::Local<v8::Object> optionsObj;
+    if (info.Length() > 0 && info[0]->IsObject()) {
+      optionsObj = info[0].As<v8::Object>();
+    }
+    info.GetReturnValue().Set(Batch::NewInstance(info.This(), optionsObj));
+    return;
+  }
+
+  LD_METHOD_SETUP_COMMON(batch, 1, 2);
+
+  bool sync = BooleanOptionValue(optionsObj, "sync");
+
+  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(info[0]);
+
+  WriteBatch* batch = new WriteBatch();
+  bool hasData = false;
+
+  for (unsigned int i = 0; i < array->Length(); i++) {
+    if (!array->Get(i)->IsObject())
+      continue;
+
+    v8::Local<v8::Object> obj = v8::Local<v8::Object>::Cast(array->Get(i));
+    v8::Local<v8::Value> keyBuffer = obj->Get(Nan::New("key").ToLocalChecked());
+    v8::Local<v8::Value> type = obj->Get(Nan::New("type").ToLocalChecked());
+
+    if (type->StrictEquals(Nan::New("del").ToLocalChecked())) {
+      LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+
+      batch->Delete(key);
+      if (!hasData)
+        hasData = true;
+
+      DisposeStringOrBufferFromSlice(keyBuffer, key);
+    } else if (type->StrictEquals(Nan::New("put").ToLocalChecked())) {
+      v8::Local<v8::Value> valueBuffer = obj->Get(Nan::New("value").ToLocalChecked());
+
+      LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+      LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
+      batch->Put(key, value);
+      if (!hasData)
+        hasData = true;
+
+      DisposeStringOrBufferFromSlice(keyBuffer, key);
+      DisposeStringOrBufferFromSlice(valueBuffer, value);
+    }
+  }
+
+  // don't allow an empty batch through
+  if (hasData) {
+    BatchWorker* worker = new BatchWorker(
+        database
+      , new Nan::Callback(callback)
+      , batch
+      , sync
+    );
+    // persist to prevent accidental GC
+    v8::Local<v8::Object> _this = info.This();
+    worker->SaveToPersistent("database", _this);
+    Nan::AsyncQueueWorker(worker);
+  } else {
+    LD_RUN_CALLBACK(callback, 0, NULL);
+  }
+}
+
+NAN_METHOD(Database::ApproximateSize) {
+  v8::Local<v8::Object> startHandle = info[0].As<v8::Object>();
+  v8::Local<v8::Object> endHandle = info[1].As<v8::Object>();
+
+  LD_METHOD_SETUP_COMMON(approximateSize, -1, 2)
+
+  LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
+  LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
+
+  ApproximateSizeWorker* worker  = new ApproximateSizeWorker(
+      database
+    , new Nan::Callback(callback)
+    , start
+    , end
+    , startHandle
+    , endHandle
+  );
+  // persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
+  Nan::AsyncQueueWorker(worker);
+}
+
 //NAN_METHOD(Database::CompactRange) {
 //  v8::Local<v8::Object> startHandle = info[0].As<v8::Object>();
 //  v8::Local<v8::Object> endHandle = info[1].As<v8::Object>();
@@ -753,26 +752,26 @@ Nan::AsyncQueueWorker(worker);
 //  worker->SaveToPersistent("database", _this);
 //  Nan::AsyncQueueWorker(worker);
 //}
-//
-//NAN_METHOD(Database::GetProperty) {
-//  v8::Local<v8::Value> propertyHandle = info[0].As<v8::Object>();
-//  v8::Local<v8::Function> callback; // for LD_STRING_OR_BUFFER_TO_SLICE
-//
-//  LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
-//
-//  kududown::Database* database =
-//      Nan::ObjectWrap::Unwrap<kududown::Database>(info.This());
-//
-//  std::string* value = new std::string();
-//  database->GetPropertyFromDatabase(property, value);
-//  v8::Local<v8::String> returnValue
-//      = Nan::New<v8::String>(value->c_str(), value->length()).ToLocalChecked();
-//  delete value;
-//  delete[] property.data();
-//
-//  info.GetReturnValue().Set(returnValue);
-//}
-//
+
+NAN_METHOD(Database::GetProperty) {
+  v8::Local<v8::Value> propertyHandle = info[0].As<v8::Object>();
+  v8::Local<v8::Function> callback; // for LD_STRING_OR_BUFFER_TO_SLICE
+
+  LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
+
+  kududown::Database* database =
+      Nan::ObjectWrap::Unwrap<kududown::Database>(info.This());
+
+  std::string* value = new std::string();
+  database->GetPropertyFromDatabase(property, value);
+  v8::Local<v8::String> returnValue
+      = Nan::New<v8::String>(value->c_str(), value->length()).ToLocalChecked();
+  delete value;
+  delete[] property.data();
+
+  info.GetReturnValue().Set(returnValue);
+}
+
 //NAN_METHOD(Database::Iterator) {
 //  Database* database = Nan::ObjectWrap::Unwrap<Database>(info.This());
 //

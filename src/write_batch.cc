@@ -25,22 +25,26 @@
 namespace kududown {
 
 // WriteBatch header has an 8-byte sequence number followed by a 4-byte count.
-static const size_t kHeader = 12;
+  static const size_t kHeader = 12;
 
-WriteBatch::WriteBatch() {
-  Clear();
-}
+  WriteBatch::WriteBatch() {
+    Clear();
+  }
 
-WriteBatch::~WriteBatch() { }
+  WriteBatch::~WriteBatch() {
+  }
 
-WriteBatch::Handler::~Handler() { }
+  WriteBatch::Handler::~Handler() {
+  }
 
-void WriteBatch::Clear() {
-  //rep_.clear();
-  //rep_.resize(kHeader);
-}
+  void
+  WriteBatch::Clear() {
+    //rep_.clear();
+    //rep_.resize(kHeader);
+  }
 
-kudu::Status WriteBatch::Iterate(Handler* handler) const {
+  kudu::Status
+  WriteBatch::Iterate(Handler* handler) const {
 //  Slice input(rep_);
 //  if (input.size() < kHeader) {
 //    return Status::Corruption("malformed WriteBatch (too small)");
@@ -78,8 +82,8 @@ kudu::Status WriteBatch::Iterate(Handler* handler) const {
 //  } else {
 //    return Status::OK();
 //  }
-  return kudu::Status::OK();
-}
+    return kudu::Status::OK();
+  }
 
 //int WriteBatchInternal::Count(const WriteBatch* b) {
 //  return DecodeFixed32(b->rep_.data() + 8);
@@ -97,18 +101,20 @@ kudu::Status WriteBatch::Iterate(Handler* handler) const {
 //  EncodeFixed64(&b->rep_[0], seq);
 //}
 
-void WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
-  //WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  //rep_.push_back(static_cast<char>(kTypeValue));
-  //PutLengthPrefixedSlice(&rep_, key);
-  //PutLengthPrefixedSlice(&rep_, value);
-}
+  void
+  WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
+    //WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
+    //rep_.push_back(static_cast<char>(kTypeValue));
+    //PutLengthPrefixedSlice(&rep_, key);
+    //PutLengthPrefixedSlice(&rep_, value);
+  }
 
-void WriteBatch::Delete(const kudu::Slice& key) {
+  void
+  WriteBatch::Delete(const kudu::Slice& key) {
 //  WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
 //  rep_.push_back(static_cast<char>(kTypeDeletion));
 //  PutLengthPrefixedSlice(&rep_, key);
-}
+  }
 
 //namespace {
 //class MemTableInserter : public WriteBatch::Handler {
@@ -146,4 +152,4 @@ void WriteBatch::Delete(const kudu::Slice& key) {
 //  dst->rep_.append(src->rep_.data() + kHeader, src->rep_.size() - kHeader);
 //}
 
-}  // namespace kududown
+}// namespace kududown

@@ -17,6 +17,8 @@
 #include "iterator.h"
 #include "kududown.h"
 #include "kuduoptions.h"
+#include "write_batch.h"
+
 
 namespace kududown {
 
@@ -48,7 +50,6 @@ namespace kududown {
 
   class Database : public Nan::ObjectWrap
   {
-    typedef void WriteBatch;
 
   public:
     static void
@@ -72,18 +73,18 @@ namespace kududown {
     WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
 
     uint64_t
-    ApproximateSizeFromDatabase(); //const leveldb::Range* range);
+    ApproximateSizeFromDatabase();//const kudu::Range* range);
 
     void
     CompactRangeFromDatabase(); //const leveldb::Slice* start, const leveldb::Slice* end);
 
     void
-    GetPropertyFromDatabase(); //const leveldb::Slice& property, std::string* value);
+    GetPropertyFromDatabase(const kudu::Slice& property, std::string* value);
 
-    void //leveldb::Iterator*
-    NewIterator(); //leveldb::ReadOptions* options);
+    Iterator*
+    NewIterator(ReadOptions* options);
 
-    void //const leveldb::Snapshot*
+    void //const kudu::Snapshot*
     NewSnapshot();
 
     void
@@ -131,12 +132,12 @@ namespace kududown {
   static NAN_METHOD(Put);
   static NAN_METHOD(Delete);
   static NAN_METHOD(Get);
-//  static NAN_METHOD(Batch);
-//  static NAN_METHOD(Write);
+  static NAN_METHOD(Batch);
+  static NAN_METHOD(Write);
 //  static NAN_METHOD(Iterator);
-//  static NAN_METHOD(ApproximateSize);
+  static NAN_METHOD(ApproximateSize);
 //  static NAN_METHOD(CompactRange);
-//  static NAN_METHOD(GetProperty);
+  static NAN_METHOD(GetProperty);
 };
 
 } // namespace kududown

@@ -77,7 +77,7 @@ namespace kududown {
       : AsyncWorker(database, callback), key(key) {
     Nan::HandleScope scope;
 
-    //SaveToPersistent("key", keyHandle);
+    SaveToPersistent("key", keyHandle);
   }
 
   IOWorker::~IOWorker() {
@@ -185,66 +185,66 @@ namespace kududown {
     IOWorker::WorkComplete();
   }
 
-//  /** BATCH WORKER **/
-//
-//  BatchWorker::BatchWorker(Database *database, Nan::Callback *callback,
-//                           leveldb::WriteBatch* batch, bool sync)
-//      : AsyncWorker(database, callback), batch(batch) {
-//    options = new leveldb::WriteOptions();
-//    options->sync = sync;
-//  }
-//  ;
-//
-//  BatchWorker::~BatchWorker() {
-//    delete batch;
-//    delete options;
-//  }
-//
-//  void
-//  BatchWorker::Execute() {
-//    SetStatus(database->WriteBatchToDatabase(options, batch));
-//  }
-//
-//  /** APPROXIMATE SIZE WORKER **/
-//
-//  ApproximateSizeWorker::ApproximateSizeWorker(
-//      Database *database, Nan::Callback *callback, leveldb::Slice start,
-//      leveldb::Slice end, v8::Local<v8::Object> &startHandle,
-//      v8::Local<v8::Object> &endHandle)
-//      : AsyncWorker(database, callback), range(start, end) {
-//    Nan::HandleScope scope;
-//
-//    SaveToPersistent("start", startHandle);
-//    SaveToPersistent("end", endHandle);
-//  }
-//  ;
-//
-//  ApproximateSizeWorker::~ApproximateSizeWorker() {
-//  }
-//
-//  void
-//  ApproximateSizeWorker::Execute() {
-//    size = database->ApproximateSizeFromDatabase(&range);
-//  }
-//
-//  void
-//  ApproximateSizeWorker::WorkComplete() {
-//    Nan::HandleScope scope;
-//
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
-//    AsyncWorker::WorkComplete();
-//  }
-//
-//  void
-//  ApproximateSizeWorker::HandleOKCallback() {
-//    Nan::HandleScope scope;
-//
-//    v8::Local<v8::Value> returnValue = Nan::New<v8::Number>((double) size);
-//    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
-//    callback->Call(2, argv);
-//  }
-//
+  /** BATCH WORKER **/
+
+  BatchWorker::BatchWorker(Database *database, Nan::Callback *callback,
+                           WriteBatch* batch, bool sync)
+      : AsyncWorker(database, callback), batch(batch) {
+    options = new WriteOptions();
+    //options->sync = sync;
+  }
+  ;
+
+  BatchWorker::~BatchWorker() {
+    delete batch;
+    delete options;
+  }
+
+  void
+  BatchWorker::Execute() {
+    SetStatus(database->WriteBatchToDatabase(options, batch));
+  }
+
+  /** APPROXIMATE SIZE WORKER **/
+
+  ApproximateSizeWorker::ApproximateSizeWorker(
+      Database *database, Nan::Callback *callback, kudu::Slice start,
+      kudu::Slice end, v8::Local<v8::Object> &startHandle,
+      v8::Local<v8::Object> &endHandle)
+      : AsyncWorker(database, callback), size(0) { // , range(start, end) {
+    Nan::HandleScope scope;
+
+    SaveToPersistent("start", startHandle);
+    SaveToPersistent("end", endHandle);
+  }
+  ;
+
+  ApproximateSizeWorker::~ApproximateSizeWorker() {
+  }
+
+  void
+  ApproximateSizeWorker::Execute() {
+    //size = database->ApproximateSizeFromDatabase(&range);
+  }
+
+  void
+  ApproximateSizeWorker::WorkComplete() {
+    //Nan::HandleScope scope;
+
+    //DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
+    //DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
+    AsyncWorker::WorkComplete();
+  }
+
+  void
+  ApproximateSizeWorker::HandleOKCallback() {
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Value> returnValue = Nan::New<v8::Number>((double) size);
+    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
+    callback->Call(2, argv);
+  }
+
 //  /** COMPACT RANGE WORKER **/
 //
 //  CompactRangeWorker::CompactRangeWorker(Database *database,

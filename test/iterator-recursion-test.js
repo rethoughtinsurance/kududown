@@ -1,6 +1,6 @@
 const test          = require('tape')
     , testCommon    = require('abstract-leveldown/testCommon')
-    , leveldown     = require('..')
+    , leveldown     = require('../ts/lib/kududown')
     , child_process = require('child_process') 
 
 var db

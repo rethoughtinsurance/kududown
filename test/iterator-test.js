@@ -1,5 +1,5 @@
 const test       = require('tape')
-    , leveldown  = require('..')
+    , leveldown  = require('../ts/lib/kududown')
     , abstract   = require('abstract-leveldown/abstract/iterator-test')
     , make       = require('./make')
     , iota       = require('iota-array')

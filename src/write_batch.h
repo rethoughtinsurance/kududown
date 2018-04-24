@@ -26,37 +26,44 @@
 
 namespace kududown {
 
-class WriteBatch {
- public:
-  WriteBatch();
-  ~WriteBatch();
+  class WriteBatch {
+  public:
+    WriteBatch();
+    ~WriteBatch();
 
-  // Store the mapping "key->value" in the database.
-  void Put(const kudu::Slice& key, const kudu::Slice& value);
+    // Store the mapping "key->value" in the database.
+    void
+    Put(const kudu::Slice& key, const kudu::Slice& value);
 
-  // If the database contains a mapping for "key", erase it.  Else do nothing.
-  void Delete(const kudu::Slice& key);
+    // If the database contains a mapping for "key", erase it.  Else do nothing.
+    void
+    Delete(const kudu::Slice& key);
 
-  // Clear all updates buffered in this batch.
-  void Clear();
+    // Clear all updates buffered in this batch.
+    void
+    Clear();
 
-  // Support for iterating over the contents of a batch.
-  class Handler {
-   public:
-    virtual ~Handler();
-    virtual void Put(const kudu::Slice& key, const kudu::Slice& value) = 0;
-    virtual void Delete(const kudu::Slice& key) = 0;
+    // Support for iterating over the contents of a batch.
+    class Handler {
+    public:
+      virtual
+      ~Handler();
+      virtual void
+      Put(const kudu::Slice& key, const kudu::Slice& value) = 0;
+      virtual void
+      Delete(const kudu::Slice& key) = 0;
+    };
+
+    kudu::Status
+    Iterate(Handler* handler) const;
+
+  private:
+    //friend class WriteBatchInternal;
+
+    //std::string rep_;  // See comment in write_batch.cc for the format of rep_
+
+    // Intentionally copyable
   };
-
-  kudu::Status Iterate(Handler* handler) const;
-
- private:
-  //friend class WriteBatchInternal;
-
-  //std::string rep_;  // See comment in write_batch.cc for the format of rep_
-
-  // Intentionally copyable
-};
 
 }  // namespace leveldb
 

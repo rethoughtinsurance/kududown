@@ -60,6 +60,7 @@
     "put-test": "verify-travis-appveyor && (tape test/put-test.js | faucet) && prebuild-ci",
     "get-test": "verify-travis-appveyor && (tape test/get-test.js | faucet) && prebuild-ci",
     "del-test": "verify-travis-appveyor && (tape test/del-test.js | faucet) && prebuild-ci",
+    "leveldown-test": "verify-travis-appveyor && (tape test/leveldown-test.js | faucet) && prebuild-ci",
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --all --strip --verbose"
   },

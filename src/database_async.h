@@ -106,65 +106,63 @@ namespace kududown {
     kudu::Slice value;
   };
 
-//class BatchWorker : public AsyncWorker {
-//public:
-//  BatchWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::WriteBatch* batch
-//    , bool sync
-//  );
-//
-//  virtual ~BatchWorker ();
-//  virtual void Execute ();
-//
-//private:
-//  leveldb::WriteOptions* options;
-//  leveldb::WriteBatch* batch;
-//};
-//
-//class ApproximateSizeWorker : public AsyncWorker {
-//public:
-//  ApproximateSizeWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::Slice start
-//    , leveldb::Slice end
-//    , v8::Local<v8::Object> &startHandle
-//    , v8::Local<v8::Object> &endHandle
-//  );
-//
-//  virtual ~ApproximateSizeWorker ();
-//  virtual void Execute ();
-//  virtual void HandleOKCallback ();
-//  virtual void WorkComplete ();
-//
-//  private:
-//    leveldb::Range range;
-//    uint64_t size;
-//};
-//
-//class CompactRangeWorker : public AsyncWorker {
-//public:
-//  CompactRangeWorker (
-//      Database *database
-//    , Nan::Callback *callback
-//    , leveldb::Slice start
-//    , leveldb::Slice end
-//    , v8::Local<v8::Object> &startHandle
-//    , v8::Local<v8::Object> &endHandle
-//  );
-//
-//  virtual ~CompactRangeWorker ();
-//  virtual void Execute ();
-//  virtual void HandleOKCallback ();
-//  virtual void WorkComplete ();
-//
-//  private:
-//    leveldb::Slice rangeStart;
-//    leveldb::Slice rangeEnd;
-//};
+  class BatchWorker : public AsyncWorker {
+  public:
+    BatchWorker(Database *database, Nan::Callback *callback,
+                WriteBatch* batch, bool sync);
 
-}// namespace kududown
+    virtual
+    ~BatchWorker();
+    virtual void
+    Execute();
+
+  private:
+    WriteOptions* options;
+    WriteBatch* batch;
+  };
+
+  class ApproximateSizeWorker : public AsyncWorker {
+  public:
+    ApproximateSizeWorker(Database *database, Nan::Callback *callback,
+                          kudu::Slice start, kudu::Slice end,
+                          v8::Local<v8::Object> &startHandle,
+                          v8::Local<v8::Object> &endHandle);
+
+    virtual
+    ~ApproximateSizeWorker();
+    virtual void
+    Execute();
+    virtual void
+    HandleOKCallback();
+    virtual void
+    WorkComplete();
+
+  private:
+    //kudu::Range range;
+    uint64_t size;
+  };
+
+  class CompactRangeWorker : public AsyncWorker {
+  public:
+    CompactRangeWorker(Database *database, Nan::Callback *callback,
+                       kudu::Slice start, kudu::Slice end,
+                       v8::Local<v8::Object> &startHandle,
+                       v8::Local<v8::Object> &endHandle);
+
+    virtual
+    ~CompactRangeWorker();
+    virtual void
+    Execute();
+    virtual void
+    HandleOKCallback();
+    virtual void
+    WorkComplete();
+
+  private:
+    kudu::Slice rangeStart;
+    kudu::Slice rangeEnd;
+  };
+
+} // namespace kududown
 
 #endif

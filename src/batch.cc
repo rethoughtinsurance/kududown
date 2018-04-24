@@ -105,27 +105,27 @@ namespace kududown {
 }
 
   NAN_METHOD(Batch::Del){
-  //Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
+  Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
   v8::Local<v8::Function> callback; // purely for the error macros
 
-  //v8::Local<v8::Value> keyBuffer = info[0];
-  //LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+  v8::Local<v8::Value> keyBuffer = info[0];
+  LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
-//  batch->batch->Delete(key);
-//  if (!batch->hasData)
-//    batch->hasData = true;
+  batch->batch->Delete(key);
+  if (!batch->hasData)
+    batch->hasData = true;
 
-  //DisposeStringOrBufferFromSlice(keyBuffer, key);
+  DisposeStringOrBufferFromSlice(keyBuffer, key);
 
   info.GetReturnValue().Set(info.Holder());
 }
 
   NAN_METHOD(Batch::Clear){
-  //Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
+  Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
-//  batch->batch->Clear();
-//  batch->hasData = false;
+  batch->batch->Clear();
+  batch->hasData = false;
 
   info.GetReturnValue().Set(info.Holder());
 }
