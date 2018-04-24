@@ -13,6 +13,7 @@
 #include "iterator.h"
 #include "common.h"
 #include "kududown.h"
+#include "kudu/client/stubs.h"
 
 namespace kududown {
 
@@ -86,24 +87,35 @@ namespace kududown {
   kudu::Status
   Database::PutToDatabase(WriteOptions* options, kudu::Slice key,
                           kudu::Slice value) {
-//
-//    if (kuduClientPtr == 0) {
-//      throw kudu::Status::RuntimeError("Not connected. Unable to perform write operation.")
-//    }
-//    if (tablePtr == 0) {
-//      throw kudu::Status::RuntimeError("Unable to open table.");
-//    }
-//
-//    // open a session
-//    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session = kuduClientPtr->NewSession();
-//    kudu::client::KuduUpsert* upsert = tablePtr->NewUpsert();
-//    kudu::KuduPartialRow* row = upsert->mutable_row();
-//    kudu::Status st = row->SetString(0, key);
-//    if (!st.ok()) {
-//
-//    }
-//    row->SetString(1, value);
-    return kudu::Status::NotSupported("PutToDatabase not implemented");
+
+    if (kuduClientPtr == 0) {
+      return kudu::Status::RuntimeError(
+          "Not connected. Unable to perform write operation.");
+    }
+    if (tablePtr == 0) {
+      return kudu::Status::RuntimeError("Unable to open table.");
+    }
+
+    // open a session
+    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
+        kuduClientPtr->NewSession();
+    kudu::client::KuduUpsert* upsert = tablePtr->NewUpsert();
+    kudu::KuduPartialRow* row = upsert->mutable_row();
+    kudu::Status st = row->SetString(0, key);
+    if (!st.ok()) {
+      KUDU_LOG(st.message());
+      return st;
+    }
+    st = row->SetString(1, value);
+    if (!st.ok()) {
+      return st;
+    }
+
+    st = session->Apply(upsert);
+    if (!st.ok()) {
+      return st;
+    }
+    //return kudu::Status::NotSupported("PutToDatabase not implemented");
   }
 
   kudu::Status
@@ -294,7 +306,7 @@ namespace kududown {
 //NAN_METHOD(EmptyMethod) {
 //}
 //
-  NAN_METHOD(Database::Close) {
+  NAN_METHOD(Database::Close){
   LD_METHOD_SETUP_COMMON_ONEARG(close)
 
   CloseWorker* worker = new CloseWorker(
@@ -347,7 +359,7 @@ namespace kududown {
   Nan::AsyncQueueWorker(worker);
 }
 
-  NAN_METHOD(Database::Put) {
+  NAN_METHOD(Database::Put){
 LD_METHOD_SETUP_COMMON(put, 2, 3)
 
 v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();

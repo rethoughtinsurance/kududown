@@ -12,8 +12,8 @@ namespace kududown {
   static Nan::Persistent<v8::FunctionTemplate> batch_constructor;
 
   Batch::Batch(kududown::Database* database, bool sync)
-      : database(database), hasData(false), batch(0) {
-    options = new WriteOptions();
+      : database(database), options(new WriteOptions),
+        batch(0), hasData(false) {
   }
 
   Batch::~Batch() {
@@ -105,11 +105,11 @@ namespace kududown {
 }
 
   NAN_METHOD(Batch::Del){
-  Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
+  //Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
   v8::Local<v8::Function> callback; // purely for the error macros
 
-  v8::Local<v8::Value> keyBuffer = info[0];
+  //v8::Local<v8::Value> keyBuffer = info[0];
   //LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
 //  batch->batch->Delete(key);
@@ -122,7 +122,7 @@ namespace kududown {
 }
 
   NAN_METHOD(Batch::Clear){
-  Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
+  //Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
 //  batch->batch->Clear();
 //  batch->hasData = false;
