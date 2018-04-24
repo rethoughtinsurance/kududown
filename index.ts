@@ -1,7 +1,6 @@
 import * as kududownSchema from './ts/kududown-schema';
-import * as kuduTableDefs from './ts/kudu-table-defs';
 import {KUDUDOWN_SCHEMA_TYPES} from './ts/kududown-schema-types';
-import {KuduDownSchemaAvscMap} from './ts/kududown-avsc-obj';
+import {kuduDownSchemaAvscMap} from './ts/kududown-avsc-obj';
 
 console.log(`Top of index before kududown load`);
 // Get the levelDOWN function for export, which should be exported as leveldown
@@ -16,5 +15,5 @@ const KuduDOWN = require('./kududown').KuduDOWN;
 
 export {KuduDOWN};
 
-export {kududownSchema, kuduTableDefs, KUDUDOWN_SCHEMA_TYPES,
-  KuduDownSchemaAvscMap};
+export {kududownSchema, KUDUDOWN_SCHEMA_TYPES,
+  kuduDownSchemaAvscMap};
