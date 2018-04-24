@@ -53,7 +53,7 @@ export function convert() {
     fs.appendFileSync(fd, `\n\n`);
 
     // Declare the map
-    fs.appendFileSync(fd, `export const KuduDownSchemaAvscMap = new TSMap<string,any>();`)
+    fs.appendFileSync(fd, `export const kuduDownSchemaAvscMap = new TSMap<string,any>();`)
     fs.appendFileSync(fd, `\n\n`);
 
     // For each type, load the JSON from the file, convert to object syntax
@@ -70,7 +70,7 @@ export function convert() {
         const schemaTextTS = schemaTextJSON.replace(/"([^"]+(?=" :))" :/g, '$1 :');
 
         // Add the TS object syntax to the map.
-        fs.appendFileSync(fd, `KuduDownSchemaAvscMap.set("${typeName}", ${schemaTextTS});`);
+        fs.appendFileSync(fd, `kuduDownSchemaAvscMap.set("${typeName}", ${schemaTextTS});`);
         fs.appendFileSync(fd, `\n\n`);
 
       }

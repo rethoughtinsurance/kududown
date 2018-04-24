@@ -1,7 +1,7 @@
 // A quick test to see if things load properly from index
 import { Log, Level } from 'ng2-logger';
 import {kududownSchema, KUDUDOWN_SCHEMA_TYPES,
-  KuduDownSchemaAvscMap} from '../index';
+  kuduDownSchemaAvscMap} from '../index';
 // import {kududown} from '../index';
 
 const logger = Log.create('kududown-quicktest', Level.DATA, Level.INFO, Level.ERROR, Level.WARN);

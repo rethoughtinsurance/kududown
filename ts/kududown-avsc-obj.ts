@@ -2,9 +2,9 @@ import { TSMap } from "typescript-map";
 
 //KuduDown Avsc Object Map
 
-export const KuduDownSchemaAvscMap = new TSMap<string,any>();
+export const kuduDownSchemaAvscMap = new TSMap<string,any>();
 
-KuduDownSchemaAvscMap.set("KuduScan", {
+kuduDownSchemaAvscMap.set("KuduScan", {
   type : "record",
   name : "KuduScan",
   namespace : "org.kududown.avro",
@@ -106,7 +106,7 @@ KuduDownSchemaAvscMap.set("KuduScan", {
 }
 );
 
-KuduDownSchemaAvscMap.set("KuduInsert", {
+kuduDownSchemaAvscMap.set("KuduInsert", {
   type : "record",
   name : "KuduInsert",
   namespace : "org.kududown.avro",
@@ -190,7 +190,7 @@ KuduDownSchemaAvscMap.set("KuduInsert", {
 }
 );
 
-KuduDownSchemaAvscMap.set("KuduScanResult", {
+kuduDownSchemaAvscMap.set("KuduScanResult", {
   type : "record",
   name : "KuduScanResult",
   namespace : "org.kududown.avro",
@@ -224,6 +224,34 @@ KuduDownSchemaAvscMap.set("KuduScanResult", {
               } ]
             }
           }
+        } ]
+      }
+    }
+  } ]
+}
+);
+
+kuduDownSchemaAvscMap.set("KuduRow", {
+  type : "record",
+  name : "KuduRow",
+  namespace : "org.kududown.avro",
+  fields : [ {
+    name : "values",
+    type : {
+      type : "array",
+      items : {
+        type : "record",
+        name : "KuduDataValue",
+        fields : [ {
+          name : "dataType",
+          type : {
+            type : "enum",
+            name : "KuduDataType",
+            symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
+          }
+        }, {
+          name : "value",
+          type : [ "null", "string", "bytes" ]
         } ]
       }
     }

@@ -102,3 +102,5 @@ export interface KuduScanResult {
 	scanId: string;
 	rows: KuduRow[];
 }
+
+
