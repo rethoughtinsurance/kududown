@@ -86,17 +86,23 @@ namespace kududown {
   kudu::Status
   Database::PutToDatabase(WriteOptions* options, kudu::Slice key,
                           kudu::Slice value) {
-
+//
 //    if (kuduClientPtr == 0) {
 //      throw kudu::Status::RuntimeError("Not connected. Unable to perform write operation.")
 //    }
 //    if (tablePtr == 0) {
 //      throw kudu::Status::RuntimeError("Unable to open table.");
 //    }
-//      // open a session
-//      kudu::client::sp::shared_ptr<kudu::client::KuduSession> session = kuduClientPtr->NewSession();
-//      kudu::client::KuduUpsert upsert = tablePtr->NewUpsert();
-
+//
+//    // open a session
+//    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session = kuduClientPtr->NewSession();
+//    kudu::client::KuduUpsert* upsert = tablePtr->NewUpsert();
+//    kudu::KuduPartialRow* row = upsert->mutable_row();
+//    kudu::Status st = row->SetString(0, key);
+//    if (!st.ok()) {
+//
+//    }
+//    row->SetString(1, value);
     return kudu::Status::NotSupported("PutToDatabase not implemented");
   }
 
