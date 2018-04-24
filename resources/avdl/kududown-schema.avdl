@@ -65,7 +65,7 @@ protocol KuduDownSchema {
   }
 
   record KuduDataValue {
-    // Only stringValue is for now, they are converted in the Kudu interface
+    // Only string values or binary for now, they are converted in the Kudu interface
     KuduDataType dataType;
     union {null,string,bytes} value;
   }
