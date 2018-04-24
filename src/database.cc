@@ -312,7 +312,37 @@ namespace kududown {
   kudu::Status
   Database::DeleteFromDatabase(WriteOptions* options, kudu::Slice key) {
 
-    return kudu::Status::NotSupported("DeleteFromDatabase not implemented");
+    if (kuduClientPtr == 0) {
+      return kudu::Status::RuntimeError(
+          "Not connected. Unable to perform write operation.");
+    }
+    if (tablePtr == 0) {
+      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      return this->tableStatus;
+    }
+
+    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
+            kuduClientPtr->NewSession();
+
+    kudu::client::KuduDelete* del = tablePtr->NewDelete();
+    kudu::KuduPartialRow* row = del->mutable_row();
+    kudu::Status st = row->SetString(0, key);
+    if (!st.ok()) {
+      return st;
+    }
+    st = session->Apply(del);
+    if (!st.ok()) {
+      KUDU_LOG(ERROR)<< st.message();
+      session->Flush();
+      if (st.message().ToString().find_first_of("key not found") != std::string::npos) {
+        return kudu::Status::OK();
+      }
+
+      return st;
+    }
+
+    session->Flush();
+    return kudu::Status::OK();
   }
 
   kudu::Status
