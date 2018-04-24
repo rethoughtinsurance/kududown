@@ -58,6 +58,7 @@
     "test": "verify-travis-appveyor && (tape test/*-test.js | faucet) && prebuild-ci",
     "open-test": "verify-travis-appveyor && (tape test/open-test.js | faucet) && prebuild-ci",
     "put-test": "verify-travis-appveyor && (tape test/put-test.js | faucet) && prebuild-ci",
+    "get-test": "verify-travis-appveyor && (tape test/get-test.js | faucet) && prebuild-ci",
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --all --strip --verbose"
   },

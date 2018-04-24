@@ -174,13 +174,19 @@ namespace kududown {
 
         kudu::client::KuduScanBatch::RowPtr row(*it);
 
-        for (size_t x = 0; x < schema.num_columns(); ++x) {
+        //for (size_t x = 0; x < schema.num_columns(); ++x) {
           std::string str;
           kudu::Status st =
-              getSliceAsString(row, schema.Column(x).type(), x, str);
+              getSliceAsString(row, schema.Column(1).type(), 1, str);
           value = str;
-        }
+        //}
       }
+    }
+    if (num_rows == 0) {
+      std::string msg("NotFound: " + key.ToString() + " was not found");
+      KUDU_LOG(WARNING) << msg;
+      value.clear();
+      return kudu::Status::NotFound(msg);
     }
     return kudu::Status::OK();
   }
@@ -298,7 +304,7 @@ namespace kududown {
         return st;
       }
       default:
-        return kudu::Status::NotFound("No convertion for datatype "
+        return kudu::Status::NotFound("No conversion for datatype "
             + kudu::client::KuduColumnSchema::DataTypeToString(type));
     }
   }
