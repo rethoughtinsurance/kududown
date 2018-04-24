@@ -101,7 +101,7 @@ namespace kududown {
   private:
     Nan::Utf8String* location;
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
-    kudu::client::sp::shared_ptr<kudu::client::KuduTable> table;
+    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
 
     Options options;
 
