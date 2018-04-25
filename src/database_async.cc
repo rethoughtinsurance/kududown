@@ -224,7 +224,7 @@ namespace kududown {
 
   void
   ApproximateSizeWorker::Execute() {
-    //size = database->ApproximateSizeFromDatabase(&range);
+    size = database->ApproximateSizeFromDatabase(0);
   }
 
   void

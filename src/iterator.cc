@@ -30,7 +30,6 @@ namespace kududown {
     options = new ReadOptions();
 
     count = 0;
-    target = NULL;
     seeking = false;
     landed = false;
     nexting = false;
@@ -40,7 +39,7 @@ namespace kududown {
 
   Iterator::~Iterator() {
     delete options;
-    ReleaseTarget();
+
     if (start != NULL) {
       // Special case for `start` option: it won't be
       // freed up by any of the delete calls below.
@@ -62,82 +61,19 @@ namespace kududown {
       delete gte;
   }
 
-  bool
-  Iterator::GetIterator() {
-    return false;
-  }
 
-  bool
-  Iterator::Read(std::string& key, std::string& value) {
-    // if it's not the first call, move to next item.
-    if (!GetIterator() && !seeking) {
-//      if (reverse)
-//        dbIterator->Prev();
-//      else
-//        dbIterator->Next();
-    }
-
+  bool Iterator::Read(std::string& key, std::string& value) {
     seeking = false;
+    //std::string key_ = dbIterator->key().ToString();
+    //int isEnd = end == NULL ? 1 : end->compare(key_);
 
-    // now check if this is the end or not, if not then return the key & value
-//    if (dbIterator->Valid()) {
-//      std::string key_ = dbIterator->key().ToString();
-//      int isEnd = end == NULL ? 1 : end->compare(key_);
-//
-//      if ((limit < 0 || ++count <= limit)
-//          && (end == NULL || (reverse && (isEnd <= 0))
-//              || (!reverse && (isEnd >= 0)))
-//          && (lt != NULL ? (lt->compare(key_) > 0) :
-//              lte != NULL ? (lte->compare(key_) >= 0) : true)
-//          && (gt != NULL ? (gt->compare(key_) < 0) :
-//              gte != NULL ? (gte->compare(key_) <= 0) : true)) {
-//        if (keys)
-//          key.assign(dbIterator->key().data(), dbIterator->key().size());
-//        if (values)
-//          value.assign(dbIterator->value().data(), dbIterator->value().size());
-//        return true;
-//      }
-//    }
-
-    return false;
+    //if (keys)
+      //key.assign(dbIterator->key().data(), dbIterator->key().size());
+    //if (values)
+      //value.assign(dbIterator->value().data(), dbIterator->value().size());
+    return true;
   }
 
-  bool
-  Iterator::OutOfRange(kudu::Slice* target) {
-    if (lt != NULL) {
-      if (target->compare(*lt) >= 0)
-        return true;
-    }
-    else if (lte != NULL) {
-      if (target->compare(*lte) > 0)
-        return true;
-    }
-    else if (start != NULL && reverse) {
-      if (target->compare(*start) > 0)
-        return true;
-    }
-
-    if (end != NULL) {
-      int d = target->compare(*end);
-      if (reverse ? d < 0 : d > 0)
-        return true;
-    }
-
-    if (gt != NULL) {
-      if (target->compare(*gt) <= 0)
-        return true;
-    }
-    else if (gte != NULL) {
-      if (target->compare(*gte) < 0)
-        return true;
-    }
-    else if (start != NULL && !reverse) {
-      if (target->compare(*start) < 0)
-        return true;
-    }
-
-    return false;
-  }
 
   bool
   Iterator::IteratorNext(std::vector<std::pair<std::string, std::string> >& result) {
@@ -176,24 +112,12 @@ namespace kududown {
 
   void
   Iterator::Release() {
-    database->ReleaseIterator(id);
-  }
-
-  void
-  Iterator::ReleaseTarget() {
-    if (target != NULL) {
-
-      if (!target->empty())
-        delete[] target->data();
-
-      delete target;
-      target = NULL;
-    }
+    //database->ReleaseIterator(id);
   }
 
   void
   checkEndCallback(Iterator* iterator) {
-    iterator->ReleaseTarget();
+    //iterator->ReleaseTarget();
     iterator->nexting = false;
     if (iterator->endWorker != NULL) {
       Nan::AsyncQueueWorker(iterator->endWorker);
@@ -318,8 +242,9 @@ namespace kududown {
 
   void
   Iterator::Init() {
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
-        Iterator::New);
+    v8::Local<v8::FunctionTemplate> tpl =
+        Nan::New<v8::FunctionTemplate>(Iterator::New);
+
     iterator_constructor.Reset(tpl);
     tpl->SetClassName(Nan::New("Iterator").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);

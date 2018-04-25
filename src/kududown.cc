@@ -52,7 +52,7 @@ NAN_METHOD(RepairDB) {
 
 void Init (v8::Local<v8::Object> target) {
   Database::Init();
-  //kududown::Iterator::Init();
+  kududown::Iterator::Init();
   kududown::Batch::Init();
 
   v8::Local<v8::Function> kududown =

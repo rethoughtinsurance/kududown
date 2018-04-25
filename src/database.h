@@ -59,26 +59,16 @@ namespace kududown {
     Database(const v8::Local<v8::Value>& from);
     ~Database();
 
-
     kudu::Status OpenDatabase(Options* options);
     kudu::Status PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
     kudu::Status GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
     kudu::Status DeleteFromDatabase(WriteOptions* options, kudu::Slice key);
     kudu::Status WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
-    uint64_t     ApproximateSizeFromDatabase();//const kudu::Range* range);
+    uint64_t     ApproximateSizeFromDatabase(const void* range);
 
-    void    CompactRangeFromDatabase(); //const leveldb::Slice* start, const leveldb::Slice* end);
+    void    CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end);
     void    GetPropertyFromDatabase(const kudu::Slice& property, std::string* value);
 
-    kududown::Iterator* NewIterator(Database* database, uint32_t id, kudu::Slice* start,
-        std::string* end, bool reverse, bool keys, bool values,
-        int limit, std::string* lt, std::string* lte,
-        std::string* gt, std::string* gte, bool fillCache,
-        bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark);
-
-    //const kudu::Snapshot*
-    void NewSnapshot();
-    void ReleaseSnapshot(/*const leveldb::Snapshot* snapshot*/);
     void CloseDatabase();
     void ReleaseIterator(uint32_t id);
 

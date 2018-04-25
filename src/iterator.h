@@ -35,23 +35,17 @@ public:
 
   ~Iterator();
 
-  bool IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
-
+  bool         IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
   kudu::Status IteratorStatus();
-
-  void IteratorEnd();
-
-  void Release();
-
-  void ReleaseTarget();
+  void         IteratorEnd();
+  void         Release();
 
 private:
   Database* database;
   uint32_t id;
-  //Iterator* dbIterator;
   ReadOptions* options;
   kudu::Slice* start;
-  kudu::Slice* target;
+
   std::string* end;
   bool seeking;
   bool landed;
@@ -75,8 +69,6 @@ public:
 
 private:
   bool Read(std::string& key, std::string& value);
-  bool GetIterator();
-  bool OutOfRange(kudu::Slice* target);
 
   kudu::Status iteratorStatus;
   static NAN_METHOD(New);

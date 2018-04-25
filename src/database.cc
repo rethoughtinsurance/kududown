@@ -352,7 +352,7 @@ namespace kududown {
   }
 
   uint64_t
-  Database::ApproximateSizeFromDatabase(/*const leveldb::Range* range*/) {
+  Database::ApproximateSizeFromDatabase(const void* range) {
 //uint64_t size;
 // JMB TODO
 //db->GetApproximateSizes(range, 1, &size);
@@ -360,9 +360,8 @@ namespace kududown {
   }
 
   void
-  Database::CompactRangeFromDatabase(/*const leveldb::Slice* start,
-   const leveldb::Slice* end*/) {
-//db->CompactRange(start, end);
+  Database::CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end) {
+    //return kudu::Status::NotSupported("CompactRangeFromDatabase is not supported.");
   }
 
   void
@@ -371,27 +370,6 @@ namespace kududown {
     *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 
-  Iterator*
-  Database::NewIterator(Database* database, uint32_t id, kudu::Slice* start,
-      std::string* end, bool reverse, bool keys, bool values,
-      int limit, std::string* lt, std::string* lte,
-      std::string* gt, std::string* gte, bool fillCache,
-      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark) {
-
-    return database->NewIterator(database, id, start, end, reverse, keys, values, limit,
-        lt, lte, gt, gte, fillCache, keyAsBuffer, valueAsBuffer, highWaterMark);
-  }
-
-//const leveldb::Snapshot*
-  void
-  Database::NewSnapshot() {
-//return db->GetSnapshot();
-  }
-
-  void
-  Database::ReleaseSnapshot(/*const leveldb::Snapshot* snapshot*/) {
-//return db->ReleaseSnapshot(snapshot);
-  }
 
   void
   Database::ReleaseIterator(uint32_t id) {
@@ -410,16 +388,6 @@ namespace kududown {
 
   void
   Database::CloseDatabase() {
-//  delete db;
-//  db = NULL;
-//  if (blockCache) {
-//    delete blockCache;
-//    blockCache = NULL;
-//  }
-//  if (filterPolicy) {
-//    delete filterPolicy;
-//    filterPolicy = NULL;
-//  }
   }
 
   /* V8 exposed functions *****************************/
@@ -520,11 +488,11 @@ namespace kududown {
   Nan::AsyncQueueWorker(worker);
 }
 
-//// for an empty callback to iterator.end()
-//NAN_METHOD(EmptyMethod) {
-//}
-//
-  NAN_METHOD(Database::Close){
+// for an empty callback to iterator.end()
+NAN_METHOD(EmptyMethod) {
+}
+
+  NAN_METHOD(Database::Close) {
   LD_METHOD_SETUP_COMMON_ONEARG(close)
 
   CloseWorker* worker = new CloseWorker(
@@ -535,44 +503,44 @@ namespace kududown {
   v8::Local<v8::Object> _this = info.This();
   worker->SaveToPersistent("database", _this);
 
-//  if (!database->iterators.empty()) {
-//    // yikes, we still have iterators open! naughty naughty.
-//    // we have to queue up a CloseWorker and manually close each of them.
-//    // the CloseWorker will be invoked once they are all cleaned up
-//    database->pendingCloseWorker = worker;
-//
-//    for (
-//        std::map< uint32_t, kududown::Iterator * >::iterator it
-//            = database->iterators.begin()
-//      ; it != database->iterators.end()
-//      ; ++it) {
-//
-//        // for each iterator still open, first check if it's already in
-//        // the process of ending (ended==true means an async End() is
-//        // in progress), if not, then we call End() with an empty callback
-//        // function and wait for it to hit ReleaseIterator() where our
-//        // CloseWorker will be invoked
-//
-//        kududown::Iterator *iterator = it->second;
-//
-//        if (!iterator->ended) {
-//          v8::Local<v8::Function> end =
-//              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
-//                  Nan::New<v8::String>("end").ToLocalChecked()));
-//          v8::Local<v8::Value> argv[] = {
-//              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
-//          };
-//          Nan::MakeCallback(
-//              iterator->handle()
-//            , end
-//            , 1
-//            , argv
-//          );
-//        }
-//    }
-//  } else {
-//    Nan::AsyncQueueWorker(worker);
-//  }
+  if (!database->iterators.empty()) {
+    // yikes, we still have iterators open! naughty naughty.
+    // we have to queue up a CloseWorker and manually close each of them.
+    // the CloseWorker will be invoked once they are all cleaned up
+    database->pendingCloseWorker = worker;
+
+    for (
+        std::map< uint32_t, kududown::Iterator * >::iterator it
+            = database->iterators.begin()
+      ; it != database->iterators.end()
+      ; ++it) {
+
+        // for each iterator still open, first check if it's already in
+        // the process of ending (ended==true means an async End() is
+        // in progress), if not, then we call End() with an empty callback
+        // function and wait for it to hit ReleaseIterator() where our
+        // CloseWorker will be invoked
+
+        kududown::Iterator *iterator = it->second;
+
+        if (!iterator->ended) {
+          v8::Local<v8::Function> end =
+              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
+                  Nan::New<v8::String>("end").ToLocalChecked()));
+          v8::Local<v8::Value> argv[] = {
+              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
+          };
+          Nan::MakeCallback(
+              iterator->handle()
+            , end
+            , 1
+            , argv
+          );
+        }
+    }
+  } else {
+    Nan::AsyncQueueWorker(worker);
+  }
 
   Nan::AsyncQueueWorker(worker);
 }
