@@ -45,6 +45,9 @@
       "type" : "record",
       "name" : "KuduComparisonPredicate",
       "fields" : [ {
+        "name" : "column",
+        "type" : "KuduColumnDef"
+      }, {
         "name" : "operator",
         "type" : {
           "type" : "enum",
@@ -59,6 +62,9 @@
       "type" : "record",
       "name" : "KuduInListPredicate",
       "fields" : [ {
+        "name" : "column",
+        "type" : "KuduColumnDef"
+      }, {
         "name" : "valueList",
         "type" : {
           "type" : "array",
