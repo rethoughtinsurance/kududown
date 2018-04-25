@@ -97,6 +97,7 @@ protocol KuduDownSchema {
 
   record KuduScan {
     KuduOperation op;
+    array<KuduColumnDef> projectedColumnList;
     string tableName;
     array<KuduPredicate> predicateList;
   }

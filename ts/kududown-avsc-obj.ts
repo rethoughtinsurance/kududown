@@ -26,6 +26,39 @@ kuduDownSchemaAvscMap.set("KuduScan", {
       } ]
     }
   }, {
+    name : "projectedColumnList",
+    type : {
+      type : "array",
+      items : {
+        type : "record",
+        name : "KuduColumnDef",
+        fields : [ {
+          name : "columnName",
+          type : "string"
+        }, {
+          name : "dataType",
+          type : {
+            type : "enum",
+            name : "KuduDataType",
+            symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
+          }
+        }, {
+          name : "allowNull",
+          type : "boolean"
+        }, {
+          name : "encoding",
+          type : [ "null", {
+            type : "enum",
+            name : "KuduColumnEncoding",
+            symbols : [ "AUTO_ENCODING", "PLAIN_ENCODING", "RLE", "DICT_ENCODING", "BIT_SHUFFLE", "PREFIX_ENCODING" ]
+          } ]
+        }, {
+          name : "isPrimaryKey",
+          type : "boolean"
+        } ]
+      }
+    }
+  }, {
     name : "tableName",
     type : "string"
   }, {
@@ -44,40 +77,16 @@ kuduDownSchemaAvscMap.set("KuduScan", {
           }
         }, {
           name : "column",
-          type : {
-            type : "record",
-            name : "KuduColumnDef",
-            fields : [ {
-              name : "columnName",
-              type : "string"
-            }, {
-              name : "dataType",
-              type : {
-                type : "enum",
-                name : "KuduDataType",
-                symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
-              }
-            }, {
-              name : "allowNull",
-              type : "boolean"
-            }, {
-              name : "encoding",
-              type : [ "null", {
-                type : "enum",
-                name : "KuduColumnEncoding",
-                symbols : [ "AUTO_ENCODING", "PLAIN_ENCODING", "RLE", "DICT_ENCODING", "BIT_SHUFFLE", "PREFIX_ENCODING" ]
-              } ]
-            }, {
-              name : "isPrimaryKey",
-              type : "boolean"
-            } ]
-          }
+          type : "KuduColumnDef"
         }, {
           name : "predicate",
           type : [ "null", {
             type : "record",
             name : "KuduComparisonPredicate",
             fields : [ {
+              name : "column",
+              type : "KuduColumnDef"
+            }, {
               name : "operator",
               type : {
                 type : "enum",
@@ -92,6 +101,9 @@ kuduDownSchemaAvscMap.set("KuduScan", {
             type : "record",
             name : "KuduInListPredicate",
             fields : [ {
+              name : "column",
+              type : "KuduColumnDef"
+            }, {
               name : "valueList",
               type : {
                 type : "array",
