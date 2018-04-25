@@ -78,8 +78,8 @@ export interface KuduPredicate {
 
 export interface KuduScan {
 	op: KuduOperation;
-	projectedColumnList: KuduColumnDef[];
 	tableName: string;
+	projectedColumnList: KuduColumnDef[];
 	predicateList: KuduPredicate[];
 }
 

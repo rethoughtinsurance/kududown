@@ -2,6 +2,7 @@
   "type" : "record",
   "name" : "KuduScanResult",
   "namespace" : "org.kududown.avro",
+  "doc" : "* KuduScanResult is only used for test data stored on disk for a query.\n   * The kududown API only returns KuduRow values.",
   "fields" : [ {
     "name" : "scanId",
     "type" : "string"
@@ -12,6 +13,7 @@
       "items" : {
         "type" : "record",
         "name" : "KuduRow",
+        "doc" : "* KuduRow holds any row of arbitrary columns for writing or reading.",
         "fields" : [ {
           "name" : "values",
           "type" : {

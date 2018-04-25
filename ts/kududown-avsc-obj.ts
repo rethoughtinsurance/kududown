@@ -26,6 +26,9 @@ kuduDownSchemaAvscMap.set("KuduScan", {
       } ]
     }
   }, {
+    name : "tableName",
+    type : "string"
+  }, {
     name : "projectedColumnList",
     type : {
       type : "array",
@@ -58,9 +61,6 @@ kuduDownSchemaAvscMap.set("KuduScan", {
         } ]
       }
     }
-  }, {
-    name : "tableName",
-    type : "string"
   }, {
     name : "predicateList",
     type : {
@@ -122,6 +122,7 @@ kuduDownSchemaAvscMap.set("KuduInsert", {
   type : "record",
   name : "KuduInsert",
   namespace : "org.kududown.avro",
+  doc : "* A KuduInsert KuduRow contains all requested columns, primary key or otherwise.",
   fields : [ {
     name : "op",
     type : {
@@ -180,6 +181,7 @@ kuduDownSchemaAvscMap.set("KuduInsert", {
     type : {
       type : "record",
       name : "KuduRow",
+      doc : "* KuduRow holds any row of arbitrary columns for writing or reading.",
       fields : [ {
         name : "values",
         type : {
@@ -206,6 +208,7 @@ kuduDownSchemaAvscMap.set("KuduScanResult", {
   type : "record",
   name : "KuduScanResult",
   namespace : "org.kududown.avro",
+  doc : "* KuduScanResult is only used for test data stored on disk for a query.\n   * The kududown API only returns KuduRow values.",
   fields : [ {
     name : "scanId",
     type : "string"
@@ -216,6 +219,7 @@ kuduDownSchemaAvscMap.set("KuduScanResult", {
       items : {
         type : "record",
         name : "KuduRow",
+        doc : "* KuduRow holds any row of arbitrary columns for writing or reading.",
         fields : [ {
           name : "values",
           type : {
@@ -247,6 +251,7 @@ kuduDownSchemaAvscMap.set("KuduRow", {
   type : "record",
   name : "KuduRow",
   namespace : "org.kududown.avro",
+  doc : "* KuduRow holds any row of arbitrary columns for writing or reading.",
   fields : [ {
     name : "values",
     type : {
