@@ -372,9 +372,14 @@ namespace kududown {
   }
 
   Iterator*
-  Database::NewIterator(ReadOptions* options) {
-    //return db->NewIterator(*options);
-    return new Iterator(options);
+  Database::NewIterator(Database* database, uint32_t id, kudu::Slice* start,
+      std::string* end, bool reverse, bool keys, bool values,
+      int limit, std::string* lt, std::string* lte,
+      std::string* gt, std::string* gte, bool fillCache,
+      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark) {
+
+    return database->NewIterator(database, id, start, end, reverse, keys, values, limit,
+        lt, lte, gt, gte, fillCache, keyAsBuffer, valueAsBuffer, highWaterMark);
   }
 
 //const leveldb::Snapshot*
@@ -396,11 +401,11 @@ namespace kududown {
 // if there is a pending CloseWorker it means that we're waiting for
 // iterators to end before we can close them
 
-//    iterators.erase(id);
-//    if (iterators.empty() && pendingCloseWorker != NULL) {
-//      Nan::AsyncQueueWorker((AsyncWorker*) pendingCloseWorker);
-//      pendingCloseWorker = NULL;
-//    }
+    iterators.erase(id);
+    if (iterators.empty() && pendingCloseWorker != NULL) {
+      Nan::AsyncQueueWorker((AsyncWorker*) pendingCloseWorker);
+      pendingCloseWorker = NULL;
+    }
   }
 
   void
@@ -440,15 +445,15 @@ namespace kududown {
     Nan::SetPrototypeMethod(tpl, "approximateSize", Database::ApproximateSize);
 //  Nan::SetPrototypeMethod(tpl, "compactRange", Database::CompactRange);
     Nan::SetPrototypeMethod(tpl, "getProperty", Database::GetProperty);
-//  Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
+    Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
   }
 
   NAN_METHOD(Database::New){
-  Database* obj = new Database(info[0]);
-  obj->Wrap(info.This());
+    Database* obj = new Database(info[0]);
+    obj->Wrap(info.This());
 
-  info.GetReturnValue().Set(info.This());
-}
+    info.GetReturnValue().Set(info.This());
+  }
 
   v8::Local<v8::Value>
   Database::NewInstance(v8::Local<v8::String> &location) {
@@ -772,45 +777,40 @@ NAN_METHOD(Database::GetProperty) {
   info.GetReturnValue().Set(returnValue);
 }
 
-//NAN_METHOD(Database::Iterator) {
-//  Database* database = Nan::ObjectWrap::Unwrap<Database>(info.This());
-//
-//  v8::Local<v8::Object> optionsObj;
-//  if (info.Length() > 0 && info[0]->IsObject()) {
-//    optionsObj = v8::Local<v8::Object>::Cast(info[0]);
-//  }
-//
-//  // each iterator gets a unique id for this Database, so we can
-//  // easily store & lookup on our `iterators` map
-//  uint32_t id = database->currentIteratorId++;
-//  Nan::TryCatch try_catch;
-//  v8::Local<v8::Object> iteratorHandle = Iterator::NewInstance(
-//      info.This()
-//    , Nan::New<v8::Number>(id)
-//    , optionsObj
-//  );
-//  if (try_catch.HasCaught()) {
-//    // NB: node::FatalException can segfault here if there is no room on stack.
-//    return Nan::ThrowError("Fatal Error in Database::Iterator!");
-//  }
-//
-//  kududown::Iterator *iterator =
-//      Nan::ObjectWrap::Unwrap<kududown::Iterator>(iteratorHandle);
-//
-//  database->iterators[id] = iterator;
-//
-//  // register our iterator
-//  /*
-//  v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-//  obj->Set(Nan::New("iterator"), iteratorHandle);
-//  Nan::Persistent<v8::Object> persistent;
-//  persistent.Reset(nan_isolate, obj);
-//  database->iterators.insert(std::pair< uint32_t, Nan::Persistent<v8::Object> & >
-//      (id, persistent));
-//  */
-//
-//  info.GetReturnValue().Set(iteratorHandle);
-//}
+NAN_METHOD(Database::Iterator) {
+  Database* database = Nan::ObjectWrap::Unwrap<Database>(info.This());
 
+  v8::Local<v8::Object> optionsObj;
+  if (info.Length() > 0 && info[0]->IsObject()) {
+    optionsObj = v8::Local<v8::Object>::Cast(info[0]);
+  }
+
+  // each iterator gets a unique id for this Database, so we can
+  // easily store & lookup on our `iterators` map
+  uint32_t id = database->currentIteratorId++;
+  Nan::TryCatch try_catch;
+
+  v8::Local<v8::Object> iteratorHandle =
+      kududown::Iterator::NewInstance(info.This(), Nan::New<v8::Number>(id), optionsObj);
+
+  if (try_catch.HasCaught()) {
+    // NB: node::FatalException can segfault here if there is no room on stack.
+    return Nan::ThrowError("Fatal Error in Database::Iterator!");
+  }
+
+  kududown::Iterator *iterator = Nan::ObjectWrap::Unwrap<kududown::Iterator>(iteratorHandle);
+
+  database->iterators[id] = iterator;
+
+  // register our iterator
+  /*
+  v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+  obj->Set(Nan::New("iterator"), iteratorHandle);
+  Nan::Persistent<v8::Object> persistent;
+  persistent.Reset(nan_isolate, obj);
+  database->iterators.insert(std::pair<uint32_t, Nan::Persistent<v8::Object> &>(id, persistent));
+  */
+  info.GetReturnValue().Set(iteratorHandle);
 }
-    // namespace kududown
+
+}  // namespace kududown

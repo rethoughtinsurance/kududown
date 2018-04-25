@@ -3,101 +3,89 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_ITERATOR_H
-#define LD_ITERATOR_H
+#ifndef _ITERATOR_H__
+#define _ITERATOR_H__
 
 #include <node.h>
 #include <vector>
 #include <nan.h>
 
-#include "database.h"
 #include "async.h"
 #include "kududown.h"
 #include "kuduoptions.h"
 
 namespace kududown {
 
-  class Database;
-  class AsyncWorker;
+class Database;
 
-  class Iterator : public Nan::ObjectWrap {
-  public:
-    static void
-    Init();
+class Iterator : public Nan::ObjectWrap {
 
-    static v8::Local<v8::Object>
-    NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
-                v8::Local<v8::Object> optionsObj);
+public:
+  static void Init();
 
-    Iterator(ReadOptions* options);
+  static v8::Local<v8::Object>
+  NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
+      v8::Local<v8::Object> optionsObj);
 
-    Iterator(Database* database, uint32_t id, kudu::Slice* start,
-     std::string* end, bool reverse, bool keys, bool values, int limit,
-     std::string* lt, std::string* lte, std::string* gt,
-     std::string* gte, bool fillCache, bool keyAsBuffer,
-     bool valueAsBuffer, size_t highWaterMark);
+  Iterator(Database* database, uint32_t id, kudu::Slice* start,
+      std::string* end, bool reverse, bool keys, bool values, int limit,
+      std::string* lt, std::string* lte, std::string* gt, std::string* gte,
+      bool fillCache, bool keyAsBuffer, bool valueAsBuffer,
+      size_t highWaterMark);
 
-    ~Iterator();
+  ~Iterator();
 
-    bool
-    IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
+  bool IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
 
-    kudu::Status
-    IteratorStatus();
+  kudu::Status IteratorStatus();
 
-    void
-    IteratorEnd();
+  void IteratorEnd();
 
-    void
-    Release();
+  void Release();
 
-    void
-    ReleaseTarget();
+  void ReleaseTarget();
 
-  private:
-    Database* database;
-    uint32_t id;
-    Iterator* dbIterator;
-    ReadOptions* options;
-    kudu::Slice* start;
-    kudu::Slice* target;
-    std::string* end;
-    bool seeking;
-    bool landed;
-    bool reverse;
-    bool keys;
-    bool values;
-    int limit;
-    std::string* lt;
-    std::string* lte;
-    std::string* gt;
-    std::string* gte;
-    int count;
-    size_t highWaterMark;
+private:
+  Database* database;
+  uint32_t id;
+  //Iterator* dbIterator;
+  ReadOptions* options;
+  kudu::Slice* start;
+  kudu::Slice* target;
+  std::string* end;
+  bool seeking;
+  bool landed;
+  bool reverse;
+  bool keys;
+  bool values;
+  int limit;
+  std::string* lt;
+  std::string* lte;
+  std::string* gt;
+  std::string* gte;
+  int count;
+  size_t highWaterMark;
 
-  public:
-    bool keyAsBuffer;
-    bool valueAsBuffer;
-    bool nexting;
-    bool ended;
-    AsyncWorker* endWorker;
+public:
+  bool keyAsBuffer;
+  bool valueAsBuffer;
+  bool nexting;
+  bool ended;
+  AsyncWorker* endWorker;
 
-  private:
-    bool
-    Read(std::string& key, std::string& value);
-    bool
-    GetIterator();
-    bool
-    OutOfRange(kudu::Slice* target);
+private:
+  bool Read(std::string& key, std::string& value);
+  bool GetIterator();
+  bool OutOfRange(kudu::Slice* target);
 
-    static NAN_METHOD(New);
+  kudu::Status iteratorStatus;
+  static NAN_METHOD(New);
   static NAN_METHOD(Seek);
   static NAN_METHOD(Next);
   static NAN_METHOD(End);
 };
 
-}
- // namespace kududown
+} // namespace kududown
 
 #endif
 

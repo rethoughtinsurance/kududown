@@ -3,8 +3,8 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_DATABASE_H
-#define LD_DATABASE_H
+#ifndef _DATABASE_H__
+#define _DATABASE_H__
 
 #include <map>
 #include <vector>
@@ -14,11 +14,11 @@
 
 #include <nan.h>
 
-#include "iterator.h"
+
 #include "kududown.h"
 #include "kuduoptions.h"
 #include "write_batch.h"
-
+#include "iterator.h"
 
 namespace kududown {
 
@@ -35,7 +35,7 @@ namespace kududown {
       _obj->Set(Nan::New("obj").ToLocalChecked(), obj);
       handle.Reset(_obj);
     }
-    ;
+
   };
 
   static inline void
@@ -52,52 +52,35 @@ namespace kududown {
   {
 
   public:
-    static void
-    Init();
+    static void Init();
 
-    static v8::Local<v8::Value>
-    NewInstance(v8::Local<v8::String> &location);
-
-    kudu::Status OpenDatabase(Options* options);
-
-    kudu::Status
-    PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
-
-    kudu::Status
-    GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
-
-    kudu::Status
-    DeleteFromDatabase(WriteOptions* options, kudu::Slice key);
-
-    kudu::Status
-    WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
-
-    uint64_t
-    ApproximateSizeFromDatabase();//const kudu::Range* range);
-
-    void
-    CompactRangeFromDatabase(); //const leveldb::Slice* start, const leveldb::Slice* end);
-
-    void
-    GetPropertyFromDatabase(const kudu::Slice& property, std::string* value);
-
-    Iterator*
-    NewIterator(ReadOptions* options);
-
-    void //const kudu::Snapshot*
-    NewSnapshot();
-
-    void
-    ReleaseSnapshot(); //const leveldb::Snapshot* snapshot);
-
-    void
-    CloseDatabase();
-
-    void
-    ReleaseIterator(uint32_t id);
+    static v8::Local<v8::Value>  NewInstance(v8::Local<v8::String> &location);
 
     Database(const v8::Local<v8::Value>& from);
     ~Database();
+
+
+    kudu::Status OpenDatabase(Options* options);
+    kudu::Status PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
+    kudu::Status GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
+    kudu::Status DeleteFromDatabase(WriteOptions* options, kudu::Slice key);
+    kudu::Status WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
+    uint64_t     ApproximateSizeFromDatabase();//const kudu::Range* range);
+
+    void    CompactRangeFromDatabase(); //const leveldb::Slice* start, const leveldb::Slice* end);
+    void    GetPropertyFromDatabase(const kudu::Slice& property, std::string* value);
+
+    kududown::Iterator* NewIterator(Database* database, uint32_t id, kudu::Slice* start,
+        std::string* end, bool reverse, bool keys, bool values,
+        int limit, std::string* lt, std::string* lte,
+        std::string* gt, std::string* gte, bool fillCache,
+        bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark);
+
+    //const kudu::Snapshot*
+    void NewSnapshot();
+    void ReleaseSnapshot(/*const leveldb::Snapshot* snapshot*/);
+    void CloseDatabase();
+    void ReleaseIterator(uint32_t id);
 
   private:
     Nan::Utf8String* location;
@@ -113,7 +96,7 @@ namespace kududown {
     void* blockCache;
     void* filterPolicy;
 
-    //std::map<uint32_t, kududown::Iterator *> iterators;
+    std::map<uint32_t, kududown::Iterator*> iterators;
 
     kudu::Status connect();
     kudu::Status openTable(std::string);
@@ -121,10 +104,8 @@ namespace kududown {
                                  kudu::client::KuduColumnSchema::DataType type,
                                  int index, std::string&);
 
-    static void
-    WriteDoing(uv_work_t *req);
-    static void
-    WriteAfter(uv_work_t *req);
+    static void WriteDoing(uv_work_t *req);
+    static void WriteAfter(uv_work_t *req);
 
     static NAN_METHOD(New);
   static NAN_METHOD(Open);
@@ -134,7 +115,7 @@ namespace kududown {
   static NAN_METHOD(Get);
   static NAN_METHOD(Batch);
   static NAN_METHOD(Write);
-//  static NAN_METHOD(Iterator);
+  static NAN_METHOD(Iterator);
   static NAN_METHOD(ApproximateSize);
 //  static NAN_METHOD(CompactRange);
   static NAN_METHOD(GetProperty);

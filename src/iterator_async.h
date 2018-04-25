@@ -19,16 +19,13 @@ namespace kududown {
     NextWorker(Iterator* iterator, Nan::Callback *callback, void
     (*localCallback)(Iterator*));
 
-    virtual
-    ~NextWorker();
+    virtual ~NextWorker();
     virtual void Execute();
-    virtual void
-    HandleOKCallback();
+    virtual void HandleOKCallback();
 
   private:
     Iterator* iterator;
-    void
-    (*localCallback)(Iterator*);
+    void (*localCallback)(Iterator*);
     std::vector<std::pair<std::string, std::string> > result;
     bool ok;
   };
@@ -37,12 +34,9 @@ namespace kududown {
   public:
     EndWorker(Iterator* iterator, Nan::Callback *callback);
 
-    virtual
-    ~EndWorker();
-    virtual void
-    Execute();
-    virtual void
-    HandleOKCallback();
+    virtual ~EndWorker();
+    virtual void Execute();
+    virtual void HandleOKCallback();
 
   private:
     Iterator* iterator;
