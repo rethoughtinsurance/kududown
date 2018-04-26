@@ -5,8 +5,11 @@ protocol KuduDownSchema {
   // It is used in a KuduMessage to indicate the type being transmitted.
   enum KuduSchemaType {
     KuduScan,
+    KuduRow,
+    KuduScanResult,
     KuduInsert,
-    KuduScanResult
+    KuduUpsert,
+    KuduKey
   }
 
   record KuduMessage {
@@ -15,7 +18,7 @@ protocol KuduDownSchema {
   }
 
   enum KuduOperationType {
-    SCAN, INSERT, DELETE
+    SCAN, INSERT, UPSERT, DELETE
   }
 
   record KuduOperation {
@@ -129,10 +132,22 @@ protocol KuduDownSchema {
   }
 
   /**
+   * A KuduUpsert KuduRow contains all requested columns, primary key or otherwise.
+   */
+  record KuduUpsert {
+    KuduOperation op;
+    string tableName;
+    array<KuduColumnDef> columns;
+    KuduRow row;
+  }
+
+  /**
    * A KuduKey is similar to KuduInsert but contains only primary key columns,
-   * it can be passed to/from put/get, and optionally returned from a
+   * it can be passed to/from put/get/delete, and optionally returned from a
    * kududown iterator if desired (although not much practical use for
    * that, normally only values will be requested).
+   * Note: There is no KuduDelete operation, it is just a KuduKey passed
+   * to a leveldown.delete.
    */
   record KuduKey {
     KuduOperation op;
