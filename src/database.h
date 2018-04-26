@@ -20,6 +20,12 @@
 #include "write_batch.h"
 #include "iterator.h"
 
+#define KD_CHECK_OK_OR_RETURN(status, message) \
+  if (!((status).ok())) { \
+    KUDU_LOG(ERROR) << (status).ToString(); \
+    return status; \
+  } \
+
 namespace kududown {
 
   NAN_METHOD(KuduDOWN);
@@ -72,6 +78,13 @@ namespace kududown {
     void CloseDatabase();
     void ReleaseIterator(uint32_t id);
 
+    kudu::Status openTable(std::string, kudu::client::sp::shared_ptr<kudu::client::KuduTable> *tablePtr);
+    kudu::client::sp::shared_ptr<kudu::client::KuduSession> openSession();
+
+    kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
+                                 kudu::client::KuduColumnSchema::DataType type,
+                                 int index, std::string&);
+
   private:
     Nan::Utf8String* location;
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
@@ -89,10 +102,6 @@ namespace kududown {
     std::map<uint32_t, kududown::Iterator*> iterators;
 
     kudu::Status connect();
-    kudu::Status openTable(std::string);
-    kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
-                                 kudu::client::KuduColumnSchema::DataType type,
-                                 int index, std::string&);
 
     static void WriteDoing(uv_work_t *req);
     static void WriteAfter(uv_work_t *req);

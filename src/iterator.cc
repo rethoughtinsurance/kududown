@@ -20,21 +20,54 @@ namespace kududown {
                      int limit, std::string* lt, std::string* lte,
                      std::string* gt, std::string* gte, bool fillCache,
                      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark)
-      : database(database), id(id), start(start), end(end), reverse(reverse), keys(
-          keys), values(values), limit(limit), lt(lt), lte(lte), gt(gt), gte(
-          gte), highWaterMark(highWaterMark), keyAsBuffer(keyAsBuffer), valueAsBuffer(
-          valueAsBuffer) {
+      : keyAsBuffer(keyAsBuffer), valueAsBuffer(valueAsBuffer),
+        database(database), id(id), start(start), end(end), reverse(reverse),
+        keys(keys), values(values), limit(limit), opened(false), inBatch(false),
+        done(false), lt(lt), lte(lte), gt(gt), gte(gte),
+        session(0), scanner(0), batch(0), schema(0) {
 
     Nan::HandleScope scope;
 
     options = new ReadOptions();
 
     count = 0;
+    rowCount = 0;
     seeking = false;
     landed = false;
     nexting = false;
     ended = false;
     endWorker = NULL;
+
+    // parse the gte and get the table name and predicates
+
+    // get a KuduTable
+    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
+    // open the table and create our scanner
+    if (!database->openTable("impala::rtip.rtip_test", &tablePtr).ok()) {
+      // error
+    }
+
+    // get a session
+    *session = database->openSession();
+
+    // create the Scanner
+    scanner = new kudu::client::KuduScanner(tablePtr.get());
+
+    // add our predicates
+    //addPredicates(scanner, predicates);
+
+    scanner->KeepAlive();
+    kudu::Status st = scanner->Open();
+
+    std::string msg("Unable to get table scanner: ");
+    msg.append(st.ToString());
+
+    if (!st.ok()) {
+      KUDU_LOG(ERROR) << st.ToString();
+    }
+    else {
+      opened = true;
+    }
   }
 
   Iterator::~Iterator() {
@@ -63,9 +96,53 @@ namespace kududown {
 
 
   bool Iterator::Read(std::string& key, std::string& value) {
-    seeking = false;
-    //std::string key_ = dbIterator->key().ToString();
-    //int isEnd = end == NULL ? 1 : end->compare(key_);
+
+    if (!opened) {
+      return false;
+    }
+
+    if (!inBatch || rowCount == 0 || count >= rowCount) {
+      count = 0;
+      rowCount = 0;
+      // get another batch
+      if (scanner->HasMoreRows()) {
+        scanner->NextBatch(batch);
+
+        if (schema == 0) {
+          *schema = scanner->GetProjectionSchema();
+        }
+        rowCount = batch->NumRows();
+        if (rowCount == 0) {
+          KUDU_LOG(ERROR)<< "Unexpected row count of 0 from KuduScanBatch";
+          return false;
+        }
+        count = 0;
+        inBatch = true;
+        done = false;
+      }
+      else {
+        scanner->Close();
+        scanner = 0;
+        done = true;
+        return false;
+      }
+    }
+
+    // get the next row
+    kudu::client::KuduScanBatch::RowPtr row = batch->Row(count);
+    ++count;
+
+    std::string newRow;
+
+    for (size_t x = 0; x < schema->num_columns(); ++x) {
+      std::string str;
+      kudu::Status st = database->getSliceAsString(row, schema->Column(x).type(), x, str);
+      newRow.append(str);
+      if (x + 1 < schema->num_columns())
+        newRow.append(",");
+    }
+
+    KUDU_LOG(INFO) << "Fetched a row: " << newRow;
 
     //if (keys)
       //key.assign(dbIterator->key().data(), dbIterator->key().size());
@@ -91,8 +168,7 @@ namespace kududown {
         }
 
         size = size + key.size() + value.size();
-        if (size > highWaterMark)
-          return true;
+
       }
       else {
         return false;
@@ -117,7 +193,6 @@ namespace kududown {
 
   void
   checkEndCallback(Iterator* iterator) {
-    //iterator->ReleaseTarget();
     iterator->nexting = false;
     if (iterator->endWorker != NULL) {
       Nan::AsyncQueueWorker(iterator->endWorker);
@@ -262,8 +337,8 @@ namespace kududown {
 
     Nan::MaybeLocal<v8::Object> maybeInstance;
     v8::Local<v8::Object> instance;
-    v8::Local<v8::FunctionTemplate> constructorHandle = Nan::New<
-        v8::FunctionTemplate>(iterator_constructor);
+    v8::Local<v8::FunctionTemplate> constructorHandle =
+        Nan::New<v8::FunctionTemplate>(iterator_constructor);
 
     if (optionsObj.IsEmpty()) {
       v8::Local<v8::Value> argv[2] = { database, id };

@@ -40,6 +40,12 @@ public:
   void         IteratorEnd();
   void         Release();
 
+  bool keyAsBuffer;
+  bool valueAsBuffer;
+  bool nexting;
+  bool ended;
+  AsyncWorker* endWorker;
+
 private:
   Database* database;
   uint32_t id;
@@ -53,21 +59,25 @@ private:
   bool keys;
   bool values;
   int limit;
+  bool opened;
+  bool inBatch;
+  bool done;
+
   std::string* lt;
   std::string* lte;
   std::string* gt;
   std::string* gte;
+
   int count;
-  size_t highWaterMark;
+  int rowCount;
 
-public:
-  bool keyAsBuffer;
-  bool valueAsBuffer;
-  bool nexting;
-  bool ended;
-  AsyncWorker* endWorker;
+  kudu::client::sp::shared_ptr<kudu::client::KuduSession> *session;
+  kudu::client::KuduScanner *scanner;
+  kudu::client::KuduScanBatch *batch;
+  kudu::client::KuduSchema *schema;
 
-private:
+  //kudu::SliceMap keyValueStore;
+
   bool Read(std::string& key, std::string& value);
 
   kudu::Status iteratorStatus;
@@ -131,3 +141,38 @@ private:
  }
  }
  */
+
+
+//void
+//RtipKuduTable::addPredicates(client::KuduScanner& scanner,
+//                             std::vector<QueryPredicate>& predicates) {
+//
+//  for (size_t x = 0; x < predicates.size(); ++x) {
+//    std::cout << "adding predicate for: " << predicates[x].toJSONString()
+//        << std::endl;
+//
+//    switch (predicates[x].op) {
+//      case ComparisonOperator::EQUAL:
+//      case ComparisonOperator::GREATER:
+//      case ComparisonOperator::GREATER_EQUAL:
+//      case ComparisonOperator::LESS:
+//      case ComparisonOperator::LESS_EQUAL: {
+//        client::KuduPredicate* p = table->NewComparisonPredicate(
+//            predicates[x].columnName, predicates[x].toKuduPredicate(),
+//            client::KuduValue::CopyString(predicates[x].value));
+//        scanner.AddConjunctPredicate(p);
+//        break;
+//      }
+//      case ComparisonOperator::IS_NOT_NULL: {
+//        client::KuduPredicate* p = table->NewIsNotNullPredicate(predicates[x].columnName);
+//        scanner.AddConjunctPredicate(p);
+//        break;
+//      }
+//      case ComparisonOperator::IS_NULL: {
+//        client::KuduPredicate* p = table->NewIsNullPredicate(predicates[x].columnName);
+//        scanner.AddConjunctPredicate(p);
+//        break;
+//      }
+//    }
+//  }
+//}

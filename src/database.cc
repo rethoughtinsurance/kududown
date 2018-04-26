@@ -17,12 +17,6 @@
 
 namespace kududown {
 
-#define CHECK_OK_OR_RETURN(status, message) \
-  if (!((status).ok())) { \
-    KUDU_LOG(ERROR) << (status).ToString(); \
-    return status; \
-  } \
-
   static Nan::Persistent<v8::FunctionTemplate> database_constructor;
 
   Database::Database(const v8::Local<v8::Value>& from)
@@ -46,23 +40,22 @@ namespace kududown {
 
     kudu::Status kuduStatus = connect();
 
-    if (kuduStatus.ok()) {
-      if (opts->tableName.size() > 0) {
-        return openTable(opts->tableName);
-      }
-      else {
-        //throw kudu::Status::InvalidArgument("A table name must be supplied");
-        return openTable("impala::rtip.rtip_test");
-      }
-    }
+//    if (kuduStatus.ok()) {
+//      if (opts->tableName.size() > 0) {
+//        return openTable(opts->tableName);
+//      }
+//      else {
+//        //throw kudu::Status::InvalidArgument("A table name must be supplied");
+//        return openTable("impala::rtip.rtip_test");
+//      }
+//    }
     return kuduStatus;
   }
 
   kudu::Status
-  Database::openTable(std::string tableName) {
+  Database::openTable(std::string tableName, kudu::client::sp::shared_ptr<kudu::client::KuduTable> *tablePtr) {
     KUDU_LOG(INFO)<< "Opening table " << tableName;
-    kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName,
-        &tablePtr);
+    kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName, tablePtr);
     if (kuduStatus.ok()) {
       KUDU_LOG(INFO) << "Table OK";
     }
@@ -88,6 +81,11 @@ namespace kududown {
       KUDU_LOG(ERROR) << kuduStatus.ToString();
     }
     return kuduStatus;
+  }
+
+  kudu::client::sp::shared_ptr<kudu::client::KuduSession>
+  Database::openSession() {
+    return kuduClientPtr->NewSession();
   }
 
   kudu::Status
@@ -156,7 +154,7 @@ namespace kududown {
     std::string msg("Unable to get table scanner: ");
     msg.append(st.ToString());
 
-    CHECK_OK_OR_RETURN(st, msg);
+    KD_CHECK_OK_OR_RETURN(st, msg);
 
     kudu::client::KuduScanBatch batch;
 
