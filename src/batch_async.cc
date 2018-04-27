@@ -21,7 +21,7 @@ BatchWriteWorker::BatchWriteWorker (
 BatchWriteWorker::~BatchWriteWorker () {}
 
 void BatchWriteWorker::Execute () {
-  SetStatus(batch->WriteIt());
+  SetStatus(batch->Write());
 }
 
 } // namespace kududown
