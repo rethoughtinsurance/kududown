@@ -7,7 +7,7 @@
     "type" : {
       "type" : "enum",
       "name" : "KuduSchemaType",
-      "symbols" : [ "KuduScan", "KuduInsert", "KuduScanResult" ]
+      "symbols" : [ "KuduScan", "KuduRow", "KuduScanResult", "KuduInsert", "KuduUpsert", "KuduKey" ]
     }
   }, {
     "name" : "obj",

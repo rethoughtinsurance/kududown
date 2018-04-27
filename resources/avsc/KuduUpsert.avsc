@@ -1,8 +1,8 @@
 {
   "type" : "record",
-  "name" : "KuduInsert",
+  "name" : "KuduUpsert",
   "namespace" : "org.kududown.avro",
-  "doc" : "* A KuduInsert KuduRow contains all requested columns, primary key or otherwise.",
+  "doc" : "* A KuduUpsert KuduRow contains all requested columns, primary key or otherwise.",
   "fields" : [ {
     "name" : "op",
     "type" : {

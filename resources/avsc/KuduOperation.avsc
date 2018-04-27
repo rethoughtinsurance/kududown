@@ -10,7 +10,7 @@
     "type" : {
       "type" : "enum",
       "name" : "KuduOperationType",
-      "symbols" : [ "SCAN", "INSERT", "DELETE" ]
+      "symbols" : [ "SCAN", "INSERT", "UPSERT", "DELETE" ]
     }
   } ]
 }

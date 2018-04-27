@@ -16,9 +16,8 @@
               }
           }]
         , ['OS == "linux"', {
-              'cflags': [
-              ]
-            , 'cflags!': [ '-fno-tree-vrp']
+               'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
+            ,  'cflags_cc': [ '-frtti'  ]
             ,  "include_dirs"  : [
                   "deps/kudu/linux/include"
                ]
@@ -26,6 +25,8 @@
           }]
         , ['OS == "mac"', {
               'cflags': []
+            , 'cflags!': [ '-fno-rtti']
+            , 'xcode_settings': { 'GCC_ENABLE_CPP_RTTI': 'YES' }
             , 'ldflags': []
             ,  "include_dirs"  : [
                   "deps/kudu/mac/include",

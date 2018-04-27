@@ -30,13 +30,7 @@ export function convert() {
   try {
 
     // Get the avsc file names.
-    let avscSourceFileNames: string[] = [];
-
-    for (let t in KUDUDOWN_SCHEMA_TYPES) {
-      if(parseInt(t) >= 0) {
-        avscSourceFileNames.push(KUDUDOWN_SCHEMA_TYPES[t] + ".avsc");
-      }
-    }
+    const avscSourceFileNames: string[] = fs.readdirSync(avscFolder);
 
     // Init the file.
     fd = fs.openSync(KUDUDOWN_AVSC_OBJ_FILE, "w+", 0o666);
@@ -58,22 +52,21 @@ export function convert() {
 
     // For each type, load the JSON from the file, convert to object syntax
     // and add to the ts file.
-    for(let t in KUDUDOWN_SCHEMA_TYPES) {
-      if(parseInt(t) >= 0) {
-        const typeName = KUDUDOWN_SCHEMA_TYPES[t];
-        const schemaTextJSON = fs.readFileSync(`${avscFolder}/${typeName}.avsc`, "UTF8");
-        logger.i(`Converting typeName: ${typeName}`);
+    for(let avscFileName of avscSourceFileNames) {
 
-        // Convert to Javascript syntax.
-        // The regex finds this: "identifier" :
-        // And replaces it with: identifier :
-        const schemaTextTS = schemaTextJSON.replace(/"([^"]+(?=" :))" :/g, '$1 :');
+      const typeName = avscFileName.substring(0,avscFileName.indexOf('.avsc'));
+      const schemaTextJSON = fs.readFileSync(`${avscFolder}/${typeName}.avsc`, "UTF8");
+      logger.i(`Converting typeName: ${typeName}`);
 
-        // Add the TS object syntax to the map.
-        fs.appendFileSync(fd, `kuduDownSchemaAvscMap.set("${typeName}", ${schemaTextTS});`);
-        fs.appendFileSync(fd, `\n\n`);
+      // Convert to Javascript syntax.
+      // The regex finds this: "identifier" :
+      // And replaces it with: identifier :
+      const schemaTextTS = schemaTextJSON.replace(/"([^"]+(?=" :))" :/g, '$1 :');
 
-      }
+      // Add the TS object syntax to the map.
+      fs.appendFileSync(fd, `kuduDownSchemaAvscMap.set("${typeName}", ${schemaTextTS});`);
+      fs.appendFileSync(fd, `\n\n`);
+
     }
 
   } catch(e) {
