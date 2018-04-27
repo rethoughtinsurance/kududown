@@ -665,6 +665,50 @@ kuduDownSchemaAvscMap.set("KuduSchemaType", {
 }
 );
 
+kuduDownSchemaAvscMap.set("KuduTableDef", {
+  type : "record",
+  name : "KuduTableDef",
+  namespace : "org.kududown.avro",
+  fields : [ {
+    name : "tableName",
+    type : "string"
+  }, {
+    name : "columns",
+    type : {
+      type : "map",
+      values : {
+        type : "record",
+        name : "KuduColumnDef",
+        fields : [ {
+          name : "columnName",
+          type : "string"
+        }, {
+          name : "dataType",
+          type : {
+            type : "enum",
+            name : "KuduDataType",
+            symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
+          }
+        }, {
+          name : "allowNull",
+          type : "boolean"
+        }, {
+          name : "encoding",
+          type : [ "null", {
+            type : "enum",
+            name : "KuduColumnEncoding",
+            symbols : [ "AUTO_ENCODING", "PLAIN_ENCODING", "RLE", "DICT_ENCODING", "BIT_SHUFFLE", "PREFIX_ENCODING" ]
+          } ]
+        }, {
+          name : "isPrimaryKey",
+          type : "boolean"
+        } ]
+      }
+    }
+  } ]
+}
+);
+
 kuduDownSchemaAvscMap.set("KuduUpsert", {
   type : "record",
   name : "KuduUpsert",

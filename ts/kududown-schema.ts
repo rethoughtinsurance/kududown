@@ -123,3 +123,9 @@ export interface KuduKey {
 	columns: KuduColumnDef[];
 	row: KuduRow;
 }
+
+
+export interface KuduTableDef {
+	tableName: string;
+	columns: { [index:string]:KuduColumnDef };
+}

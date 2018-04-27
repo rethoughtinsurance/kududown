@@ -4,5 +4,6 @@ export enum KUDUDOWN_SCHEMA_TYPES {
   KuduScanResult,
   KuduInsert,
   KuduUpsert,
-  KuduKey
+  KuduKey,
+  KuduTableDef
 }

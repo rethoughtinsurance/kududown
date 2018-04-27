@@ -67,6 +67,11 @@ protocol KuduDownSchema {
     boolean isPrimaryKey;
   }
 
+  record KuduTableDef {
+    string tableName;
+    map<KuduColumnDef> columns;
+  }
+
   record KuduDataValue {
     // Only string values or binary for now, they are converted in the Kudu interface
     KuduDataType dataType;
