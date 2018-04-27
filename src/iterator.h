@@ -75,6 +75,7 @@ private:
   kudu::client::KuduScanner *scanner;
   kudu::client::KuduScanBatch *batch;
   kudu::client::KuduSchema *schema;
+  kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
 
   //kudu::SliceMap keyValueStore;
 

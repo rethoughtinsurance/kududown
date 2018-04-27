@@ -44,6 +44,7 @@ namespace kududown {
 
   void
   OpenWorker::Execute() {
+    KUDU_LOG(INFO) << "OPENWORKER calling OpenDatabase";
     SetStatus(database->OpenDatabase(options));
   }
 

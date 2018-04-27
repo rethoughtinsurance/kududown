@@ -11,8 +11,7 @@ namespace kududown {
 
   class Batch : public Nan::ObjectWrap {
   public:
-    static void
-    Init();
+    static void Init();
 
     static v8::Local<v8::Value>
     NewInstance(v8::Local<v8::Object> database,
@@ -21,8 +20,7 @@ namespace kududown {
     Batch(kududown::Database* database, bool sync);
     ~Batch();
 
-    kudu::Status
-    Write();
+    kudu::Status WriteIt();
 
   private:
     kududown::Database* database;

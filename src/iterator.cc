@@ -10,6 +10,7 @@
 #include "iterator.h"
 #include "iterator_async.h"
 #include "common.h"
+//#include "avro/KuduScan.h"
 
 namespace kududown {
 
@@ -39,12 +40,21 @@ namespace kududown {
     endWorker = NULL;
 
     // parse the gte and get the table name and predicates
+//    rtip::KuduScan kScan;
+//
+//    try {
+//      avro::DecoderPtr d = avro::binaryDecoder();
+//      std::auto_ptr<avro::InputStream> in;
+//      d->init(*in);
+//      avro::decode(*d, kScan);
+//    }
+//    catch (std::exception& e) {
+//      KUDU_LOG(ERROR) << "Unable to decode Avro object for KuduScan: " << e.what();
+//    }
 
-    // get a KuduTable
-    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
     // open the table and create our scanner
     if (!database->openTable("impala::rtip.rtip_test", &tablePtr).ok()) {
-      // error
+      return;
     }
 
     // get a session

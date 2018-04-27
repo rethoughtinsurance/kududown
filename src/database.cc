@@ -33,6 +33,8 @@ namespace kududown {
 
   kudu::Status
   Database::OpenDatabase(Options* opts) {
+    KUDU_LOG(INFO) << "OPENING DATABASE";
+
     if (!opts) {
       return kudu::Status::InvalidArgument("Options cannot be empty");
     }
@@ -40,15 +42,7 @@ namespace kududown {
 
     kudu::Status kuduStatus = connect();
 
-//    if (kuduStatus.ok()) {
-//      if (opts->tableName.size() > 0) {
-//        return openTable(opts->tableName);
-//      }
-//      else {
-//        //throw kudu::Status::InvalidArgument("A table name must be supplied");
-//        return openTable("impala::rtip.rtip_test");
-//      }
-//    }
+    KUDU_LOG(INFO) << "CONNECTED";
     return kuduStatus;
   }
 
@@ -96,17 +90,21 @@ namespace kududown {
       return kudu::Status::RuntimeError(
           "Not connected. Unable to perform write operation.");
     }
-    if (tablePtr == 0) {
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
-      return this->tableStatus;
+
+    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
+    kudu::Status st = this->openTable("impala::rtip.rtip_test", &tablePtr);
+
+    if (!st.ok()) {
+      return kudu::Status::RuntimeError("Unable to open table.");
     }
 
     // open a session
     kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
         kuduClientPtr->NewSession();
+
     kudu::client::KuduUpsert* upsert = tablePtr->NewUpsert();
     kudu::KuduPartialRow* row = upsert->mutable_row();
-    kudu::Status st = row->SetString(0, key);
+    st = row->SetString(0, key);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
       return st;
@@ -118,6 +116,9 @@ namespace kududown {
     }
 
     st = session->Apply(upsert);
+
+    session->Close();
+
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
       return st;
@@ -131,11 +132,14 @@ namespace kududown {
                             std::string& value) {
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
-          "Not connected. Unable to perform write operation.");
+          "Not connected. Unable to perform read operation.");
     }
-    if (tablePtr == 0) {
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
-      return this->tableStatus;
+
+    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
+    kudu::Status st = this->openTable("impala::rtip.rtip_test", &tablePtr);
+
+    if (!st.ok()) {
+      return kudu::Status::RuntimeError("Unable to open table.");
     }
 
     kudu::client::KuduScanner scanner(tablePtr.get());
@@ -149,7 +153,7 @@ namespace kududown {
     scanner.AddConjunctPredicate(p);
 
     scanner.KeepAlive();
-    kudu::Status st = scanner.Open();
+    st = scanner.Open();
 
     std::string msg("Unable to get table scanner: ");
     msg.append(st.ToString());
@@ -180,6 +184,8 @@ namespace kududown {
         //}
       }
     }
+    scanner.Close();
+
     if (num_rows == 0) {
       std::string msg("NotFound: " + key.ToString() + " was not found");
       KUDU_LOG(WARNING) << msg;
@@ -314,9 +320,12 @@ namespace kududown {
       return kudu::Status::RuntimeError(
           "Not connected. Unable to perform write operation.");
     }
-    if (tablePtr == 0) {
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
-      return this->tableStatus;
+
+    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
+    kudu::Status st = this->openTable("impala::rtip.rtip_test", &tablePtr);
+
+    if (!st.ok()) {
+      return kudu::Status::RuntimeError("Unable to open table.");
     }
 
     kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
@@ -324,7 +333,7 @@ namespace kududown {
 
     kudu::client::KuduDelete* del = tablePtr->NewDelete();
     kudu::KuduPartialRow* row = del->mutable_row();
-    kudu::Status st = row->SetString(0, key);
+    st = row->SetString(0, key);
     if (!st.ok()) {
       return st;
     }
@@ -340,12 +349,13 @@ namespace kududown {
     }
 
     session->Flush();
+    session->Close();
+
     return kudu::Status::OK();
   }
 
   kudu::Status
   Database::WriteBatchToDatabase(WriteOptions * options, WriteBatch * batch) {
-//return db->Write(*options, batch);
     return kudu::Status::NotSupported("WriteBatchToDatabase not implemented");
   }
 
@@ -359,12 +369,11 @@ namespace kududown {
 
   void
   Database::CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end) {
-    //return kudu::Status::NotSupported("CompactRangeFromDatabase is not supported.");
+    // not supported
   }
 
   void
-  Database::GetPropertyFromDatabase(const kudu::Slice& property,
-   std::string* value) {
+  Database::GetPropertyFromDatabase(const kudu::Slice& property, std::string* value) {
     *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 

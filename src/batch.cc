@@ -22,7 +22,7 @@ namespace kududown {
   }
 
   kudu::Status
-  Batch::Write() {
+  Batch::WriteIt() {
     return database->WriteBatchToDatabase(options, batch);
   }
 
@@ -64,8 +64,8 @@ namespace kududown {
     Nan::MaybeLocal<v8::Object> maybeInstance;
     v8::Local<v8::Object> instance;
 
-    v8::Local<v8::FunctionTemplate> constructorHandle = Nan::New<
-        v8::FunctionTemplate>(batch_constructor);
+    v8::Local<v8::FunctionTemplate> constructorHandle =
+        Nan::New<v8::FunctionTemplate>(batch_constructor);
 
     if (optionsObj.IsEmpty()) {
       v8::Local<v8::Value> argv[1] = { database };
