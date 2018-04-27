@@ -1,8 +1,8 @@
 {
   "type" : "record",
-  "name" : "KuduInsert",
+  "name" : "KuduKey",
   "namespace" : "org.kududown.avro",
-  "doc" : "* A KuduInsert KuduRow contains all requested columns, primary key or otherwise.",
+  "doc" : "* A KuduKey is similar to KuduInsert but contains only primary key columns,\n   * it can be passed to/from put/get/delete, and optionally returned from a\n   * kududown iterator if desired (although not much practical use for\n   * that, normally only values will be requested).\n   * Note: There is no KuduDelete operation, it is just a KuduKey passed\n   * to a leveldown.delete.",
   "fields" : [ {
     "name" : "op",
     "type" : {

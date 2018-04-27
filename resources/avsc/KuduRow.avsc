@@ -2,6 +2,7 @@
   "type" : "record",
   "name" : "KuduRow",
   "namespace" : "org.kududown.avro",
+  "doc" : "* KuduRow holds any row of arbitrary columns for writing or reading.",
   "fields" : [ {
     "name" : "values",
     "type" : {

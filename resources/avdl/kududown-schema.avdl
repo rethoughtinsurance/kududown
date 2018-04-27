@@ -5,8 +5,11 @@ protocol KuduDownSchema {
   // It is used in a KuduMessage to indicate the type being transmitted.
   enum KuduSchemaType {
     KuduScan,
+    KuduRow,
+    KuduScanResult,
     KuduInsert,
-    KuduScanResult
+    KuduUpsert,
+    KuduKey
   }
 
   record KuduMessage {
@@ -15,7 +18,7 @@ protocol KuduDownSchema {
   }
 
   enum KuduOperationType {
-    SCAN, INSERT, DELETE
+    SCAN, INSERT, UPSERT, DELETE
   }
 
   record KuduOperation {
@@ -64,6 +67,11 @@ protocol KuduDownSchema {
     boolean isPrimaryKey;
   }
 
+  record KuduTableDef {
+    string tableName;
+    map<KuduColumnDef> columns;
+  }
+
   record KuduDataValue {
     // Only string values or binary for now, they are converted in the Kudu interface
     KuduDataType dataType;
@@ -97,20 +105,30 @@ protocol KuduDownSchema {
 
   record KuduScan {
     KuduOperation op;
-    array<KuduColumnDef> projectedColumnList;
     string tableName;
+    array<KuduColumnDef> projectedColumnList;
     array<KuduPredicate> predicateList;
   }
 
+  /**
+   * KuduRow holds any row of arbitrary columns for writing or reading.
+   */
   record KuduRow {
     array<KuduDataValue> values;
   }
 
+  /**
+   * KuduScanResult is only used for test data stored on disk for a query.
+   * The kududown API only returns KuduRow values.
+   */
   record KuduScanResult {
     string scanId;
     array<KuduRow> rows;
   }
 
+  /**
+   * A KuduInsert KuduRow contains all requested columns, primary key or otherwise.
+   */
   record KuduInsert {
     KuduOperation op;
     string tableName;
@@ -118,5 +136,29 @@ protocol KuduDownSchema {
     KuduRow row;
   }
 
+  /**
+   * A KuduUpsert KuduRow contains all requested columns, primary key or otherwise.
+   */
+  record KuduUpsert {
+    KuduOperation op;
+    string tableName;
+    array<KuduColumnDef> columns;
+    KuduRow row;
+  }
+
+  /**
+   * A KuduKey is similar to KuduInsert but contains only primary key columns,
+   * it can be passed to/from put/get/delete, and optionally returned from a
+   * kududown iterator if desired (although not much practical use for
+   * that, normally only values will be requested).
+   * Note: There is no KuduDelete operation, it is just a KuduKey passed
+   * to a leveldown.delete.
+   */
+  record KuduKey {
+    KuduOperation op;
+    string tableName;
+    array<KuduColumnDef> columns;
+    KuduRow row;
+  }
 
 }

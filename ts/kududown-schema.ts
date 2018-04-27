@@ -3,6 +3,7 @@
 export enum KuduOperationType {
   SCAN = 'SCAN',
   INSERT = 'INSERT',
+  UPSERT = 'UPSERT',
   DELETE = 'DELETE'
 };
 
@@ -78,8 +79,8 @@ export interface KuduPredicate {
 
 export interface KuduScan {
 	op: KuduOperation;
-	projectedColumnList: KuduColumnDef[];
 	tableName: string;
+	projectedColumnList: KuduColumnDef[];
 	predicateList: KuduPredicate[];
 }
 
@@ -93,6 +94,13 @@ export interface KuduRow {
 	values: KuduDataValue[];
 }
 
+
+export interface KuduScanResult {
+	scanId: string;
+	rows: KuduRow[];
+}
+
+
 export interface KuduInsert {
 	op: KuduOperation;
 	tableName: string;
@@ -101,9 +109,23 @@ export interface KuduInsert {
 }
 
 
-export interface KuduScanResult {
-	scanId: string;
-	rows: KuduRow[];
+export interface KuduUpsert {
+	op: KuduOperation;
+	tableName: string;
+	columns: KuduColumnDef[];
+	row: KuduRow;
 }
 
 
+export interface KuduKey {
+	op: KuduOperation;
+	tableName: string;
+	columns: KuduColumnDef[];
+	row: KuduRow;
+}
+
+
+export interface KuduTableDef {
+	tableName: string;
+	columns: { [index:string]:KuduColumnDef };
+}
