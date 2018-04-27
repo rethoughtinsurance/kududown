@@ -14,17 +14,10 @@
 
 #include <nan.h>
 
-
 #include "kududown.h"
 #include "kuduoptions.h"
 #include "write_batch.h"
 #include "iterator.h"
-
-#define KD_CHECK_OK_OR_RETURN(status, message) \
-  if (!((status).ok())) { \
-    KUDU_LOG(ERROR) << (status).ToString(); \
-    return status; \
-  } \
 
 namespace kududown {
 
@@ -65,6 +58,7 @@ namespace kududown {
     Database(const v8::Local<v8::Value>& from);
     ~Database();
 
+
     kudu::Status OpenDatabase(Options* options);
     kudu::Status PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
     kudu::Status GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
@@ -75,15 +69,14 @@ namespace kududown {
     void    CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end);
     void    GetPropertyFromDatabase(const kudu::Slice& property, std::string* value);
 
+    kududown::Iterator* NewIterator(Database* database, uint32_t id, kudu::Slice* start,
+        std::string* end, bool reverse, bool keys, bool values,
+        int limit, std::string* lt, std::string* lte,
+        std::string* gt, std::string* gte, bool fillCache,
+        bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark);
+
     void CloseDatabase();
     void ReleaseIterator(uint32_t id);
-
-    kudu::Status openTable(std::string, kudu::client::sp::shared_ptr<kudu::client::KuduTable> *tablePtr);
-    kudu::client::sp::shared_ptr<kudu::client::KuduSession> openSession();
-
-    kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
-                                 kudu::client::KuduColumnSchema::DataType type,
-                                 int index, std::string&);
 
   private:
     Nan::Utf8String* location;
@@ -102,6 +95,10 @@ namespace kududown {
     std::map<uint32_t, kududown::Iterator*> iterators;
 
     kudu::Status connect();
+    kudu::Status openTable(std::string);
+    kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
+                                 kudu::client::KuduColumnSchema::DataType type,
+                                 int index, std::string&);
 
     static void WriteDoing(uv_work_t *req);
     static void WriteAfter(uv_work_t *req);
@@ -116,7 +113,7 @@ namespace kududown {
   static NAN_METHOD(Write);
   static NAN_METHOD(Iterator);
   static NAN_METHOD(ApproximateSize);
-//  static NAN_METHOD(CompactRange);
+  static NAN_METHOD(CompactRange);
   static NAN_METHOD(GetProperty);
 };
 

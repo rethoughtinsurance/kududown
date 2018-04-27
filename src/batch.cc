@@ -13,12 +13,14 @@ namespace kududown {
 
   Batch::Batch(kududown::Database* database, bool sync)
       : database(database), options(new WriteOptions),
-        batch(0), hasData(false) {
+        batch(new WriteBatch), hasData(false) {
   }
 
   Batch::~Batch() {
-    delete options;
-    //delete batch;
+    if (options != 0)
+      delete options;
+    if (batch != 0)
+      delete batch;
   }
 
   kudu::Status
@@ -135,7 +137,7 @@ Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
 if (batch->hasData) {
   Nan::Callback *callback =
-  new Nan::Callback(v8::Local<v8::Function>::Cast(info[0]));
+      new Nan::Callback(v8::Local<v8::Function>::Cast(info[0]));
   BatchWriteWorker* worker = new BatchWriteWorker(batch, callback);
   // persist to prevent accidental GC
   v8::Local<v8::Object> _this = info.This();

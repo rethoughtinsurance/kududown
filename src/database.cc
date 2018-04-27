@@ -17,6 +17,12 @@
 
 namespace kududown {
 
+#define CHECK_OK_OR_RETURN(status, message) \
+  if (!((status).ok())) { \
+    KUDU_LOG(ERROR) << (status).ToString(); \
+    return status; \
+  } \
+
   static Nan::Persistent<v8::FunctionTemplate> database_constructor;
 
   Database::Database(const v8::Local<v8::Value>& from)
@@ -40,22 +46,23 @@ namespace kududown {
 
     kudu::Status kuduStatus = connect();
 
-//    if (kuduStatus.ok()) {
-//      if (opts->tableName.size() > 0) {
-//        return openTable(opts->tableName);
-//      }
-//      else {
-//        //throw kudu::Status::InvalidArgument("A table name must be supplied");
-//        return openTable("impala::rtip.rtip_test");
-//      }
-//    }
+    if (kuduStatus.ok()) {
+      if (opts->tableName.size() > 0) {
+        return openTable(opts->tableName);
+      }
+      else {
+        //throw kudu::Status::InvalidArgument("A table name must be supplied");
+        return openTable("impala::rtip.rtip_test");
+      }
+    }
     return kuduStatus;
   }
 
   kudu::Status
-  Database::openTable(std::string tableName, kudu::client::sp::shared_ptr<kudu::client::KuduTable> *tablePtr) {
+  Database::openTable(std::string tableName) {
     KUDU_LOG(INFO)<< "Opening table " << tableName;
-    kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName, tablePtr);
+    kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName,
+        &tablePtr);
     if (kuduStatus.ok()) {
       KUDU_LOG(INFO) << "Table OK";
     }
@@ -81,11 +88,6 @@ namespace kududown {
       KUDU_LOG(ERROR) << kuduStatus.ToString();
     }
     return kuduStatus;
-  }
-
-  kudu::client::sp::shared_ptr<kudu::client::KuduSession>
-  Database::openSession() {
-    return kuduClientPtr->NewSession();
   }
 
   kudu::Status
@@ -154,7 +156,7 @@ namespace kududown {
     std::string msg("Unable to get table scanner: ");
     msg.append(st.ToString());
 
-    KD_CHECK_OK_OR_RETURN(st, msg);
+    CHECK_OK_OR_RETURN(st, msg);
 
     kudu::client::KuduScanBatch batch;
 
@@ -346,20 +348,18 @@ namespace kududown {
   kudu::Status
   Database::WriteBatchToDatabase(WriteOptions * options, WriteBatch * batch) {
 //return db->Write(*options, batch);
-    return kudu::Status::NotSupported("WriteBatchToDatabase not implemented");
+    //return kudu::Status::NotSupported("WriteBatchToDatabase not implemented");
+    return kudu::Status::OK();
   }
 
   uint64_t
   Database::ApproximateSizeFromDatabase(const void* range) {
-//uint64_t size;
-// JMB TODO
-//db->GetApproximateSizes(range, 1, &size);
     return 0;
   }
 
   void
   Database::CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end) {
-    //return kudu::Status::NotSupported("CompactRangeFromDatabase is not supported.");
+    //db->CompactRange(start, end);
   }
 
   void
@@ -368,6 +368,16 @@ namespace kududown {
     *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 
+  Iterator*
+  Database::NewIterator(Database* database, uint32_t id, kudu::Slice* start,
+      std::string* end, bool reverse, bool keys, bool values,
+      int limit, std::string* lt, std::string* lte,
+      std::string* gt, std::string* gte, bool fillCache,
+      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark) {
+
+    return new kududown::Iterator(database, id, start, end, keys, values, limit,
+        lt, lte, gt, gte, fillCache, keyAsBuffer, valueAsBuffer);
+  }
 
   void
   Database::ReleaseIterator(uint32_t id) {
@@ -409,7 +419,7 @@ namespace kududown {
     Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
     Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
     Nan::SetPrototypeMethod(tpl, "approximateSize", Database::ApproximateSize);
-//  Nan::SetPrototypeMethod(tpl, "compactRange", Database::CompactRange);
+    Nan::SetPrototypeMethod(tpl, "compactRange", Database::CompactRange);
     Nan::SetPrototypeMethod(tpl, "getProperty", Database::GetProperty);
     Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
   }
@@ -486,11 +496,11 @@ namespace kududown {
   Nan::AsyncQueueWorker(worker);
 }
 
-// for an empty callback to iterator.end()
-NAN_METHOD(EmptyMethod) {
-}
-
-  NAN_METHOD(Database::Close) {
+//// for an empty callback to iterator.end()
+//NAN_METHOD(EmptyMethod) {
+//}
+//
+  NAN_METHOD(Database::Close){
   LD_METHOD_SETUP_COMMON_ONEARG(close)
 
   CloseWorker* worker = new CloseWorker(
@@ -501,44 +511,44 @@ NAN_METHOD(EmptyMethod) {
   v8::Local<v8::Object> _this = info.This();
   worker->SaveToPersistent("database", _this);
 
-  if (!database->iterators.empty()) {
-    // yikes, we still have iterators open! naughty naughty.
-    // we have to queue up a CloseWorker and manually close each of them.
-    // the CloseWorker will be invoked once they are all cleaned up
-    database->pendingCloseWorker = worker;
-
-    for (
-        std::map< uint32_t, kududown::Iterator * >::iterator it
-            = database->iterators.begin()
-      ; it != database->iterators.end()
-      ; ++it) {
-
-        // for each iterator still open, first check if it's already in
-        // the process of ending (ended==true means an async End() is
-        // in progress), if not, then we call End() with an empty callback
-        // function and wait for it to hit ReleaseIterator() where our
-        // CloseWorker will be invoked
-
-        kududown::Iterator *iterator = it->second;
-
-        if (!iterator->ended) {
-          v8::Local<v8::Function> end =
-              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
-                  Nan::New<v8::String>("end").ToLocalChecked()));
-          v8::Local<v8::Value> argv[] = {
-              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
-          };
-          Nan::MakeCallback(
-              iterator->handle()
-            , end
-            , 1
-            , argv
-          );
-        }
-    }
-  } else {
-    Nan::AsyncQueueWorker(worker);
-  }
+//  if (!database->iterators.empty()) {
+//    // yikes, we still have iterators open! naughty naughty.
+//    // we have to queue up a CloseWorker and manually close each of them.
+//    // the CloseWorker will be invoked once they are all cleaned up
+//    database->pendingCloseWorker = worker;
+//
+//    for (
+//        std::map< uint32_t, kududown::Iterator * >::iterator it
+//            = database->iterators.begin()
+//      ; it != database->iterators.end()
+//      ; ++it) {
+//
+//        // for each iterator still open, first check if it's already in
+//        // the process of ending (ended==true means an async End() is
+//        // in progress), if not, then we call End() with an empty callback
+//        // function and wait for it to hit ReleaseIterator() where our
+//        // CloseWorker will be invoked
+//
+//        kududown::Iterator *iterator = it->second;
+//
+//        if (!iterator->ended) {
+//          v8::Local<v8::Function> end =
+//              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
+//                  Nan::New<v8::String>("end").ToLocalChecked()));
+//          v8::Local<v8::Value> argv[] = {
+//              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
+//          };
+//          Nan::MakeCallback(
+//              iterator->handle()
+//            , end
+//            , 1
+//            , argv
+//          );
+//        }
+//    }
+//  } else {
+//    Nan::AsyncQueueWorker(worker);
+//  }
 
   Nan::AsyncQueueWorker(worker);
 }
@@ -576,14 +586,14 @@ NAN_METHOD(EmptyMethod) {
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool asBuffer = BooleanOptionValue(optionsObj, "asBuffer", true);
-  bool fillCache = BooleanOptionValue(optionsObj, "fillCache", true);
+  //bool fillCache = BooleanOptionValue(optionsObj, "fillCache", true);
 
   ReadWorker* worker = new ReadWorker(
       database
       , new Nan::Callback(callback)
       , key
       , asBuffer
-      , fillCache
+      , false
       , keyHandle
   );
 // persist to prevent accidental GC
@@ -614,6 +624,7 @@ Nan::AsyncQueueWorker(worker);
 }
 
 NAN_METHOD(Database::Batch) {
+
   if ((info.Length() == 0 || info.Length() == 1) && !info[0]->IsArray()) {
     v8::Local<v8::Object> optionsObj;
     if (info.Length() > 0 && info[0]->IsObject()) {
@@ -675,6 +686,9 @@ NAN_METHOD(Database::Batch) {
     worker->SaveToPersistent("database", _this);
     Nan::AsyncQueueWorker(worker);
   } else {
+
+    KUDU_LOG(INFO) << "AT BATCH";
+
     LD_RUN_CALLBACK(callback, 0, NULL);
   }
 }
@@ -702,27 +716,28 @@ NAN_METHOD(Database::ApproximateSize) {
   Nan::AsyncQueueWorker(worker);
 }
 
-//NAN_METHOD(Database::CompactRange) {
-//  v8::Local<v8::Object> startHandle = info[0].As<v8::Object>();
-//  v8::Local<v8::Object> endHandle = info[1].As<v8::Object>();
-//
-//  LD_METHOD_SETUP_COMMON(compactRange, -1, 2)
-//  LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
-//  LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
-//
-//  CompactRangeWorker* worker  = new CompactRangeWorker(
-//      database
-//    , new Nan::Callback(callback)
-//    , start
-//    , end
-//    , startHandle
-//    , endHandle
-//  );
-//  // persist to prevent accidental GC
-//  v8::Local<v8::Object> _this = info.This();
-//  worker->SaveToPersistent("database", _this);
-//  Nan::AsyncQueueWorker(worker);
-//}
+//Nan::NAN_METHOD_RETURN_TYPE Database::CompactRange(Nan::NAN_METHOD_ARGS_TYPE info)
+NAN_METHOD(Database::CompactRange) {
+  v8::Local<v8::Object> startHandle = info[0].As<v8::Object>();
+  v8::Local<v8::Object> endHandle = info[1].As<v8::Object>();
+
+  LD_METHOD_SETUP_COMMON(compactRange, -1, 2)
+  LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
+  LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
+
+  CompactRangeWorker* worker  = new CompactRangeWorker(
+      database
+    , new Nan::Callback(callback)
+    , start
+    , end
+    , startHandle
+    , endHandle
+  );
+  // persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("database", _this);
+  Nan::AsyncQueueWorker(worker);
+}
 
 NAN_METHOD(Database::GetProperty) {
   v8::Local<v8::Value> propertyHandle = info[0].As<v8::Object>();

@@ -21,8 +21,7 @@ namespace kududown {
     Batch(kududown::Database* database, bool sync);
     ~Batch();
 
-    kudu::Status
-    Write();
+    kudu::Status Write();
 
   private:
     kududown::Database* database;

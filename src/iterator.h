@@ -28,56 +28,45 @@ public:
       v8::Local<v8::Object> optionsObj);
 
   Iterator(Database* database, uint32_t id, kudu::Slice* start,
-      std::string* end, bool reverse, bool keys, bool values, int limit,
+      std::string* end, bool keys, bool values, int limit,
       std::string* lt, std::string* lte, std::string* gt, std::string* gte,
-      bool fillCache, bool keyAsBuffer, bool valueAsBuffer,
-      size_t highWaterMark);
+      bool fillCache, bool keyAsBuffer, bool valueAsBuffer);
 
   ~Iterator();
 
-  bool         IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
-  kudu::Status IteratorStatus();
-  void         IteratorEnd();
-  void         Release();
+  bool IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
 
-  bool keyAsBuffer;
-  bool valueAsBuffer;
-  bool nexting;
-  bool ended;
-  AsyncWorker* endWorker;
+  kudu::Status IteratorStatus();
+
+  void IteratorEnd();
+
+  void Release();
+
 
 private:
   Database* database;
   uint32_t id;
+  //Iterator* dbIterator;
   ReadOptions* options;
   kudu::Slice* start;
 
   std::string* end;
-  bool seeking;
-  bool landed;
-  bool reverse;
+
   bool keys;
   bool values;
   int limit;
-  bool opened;
-  bool inBatch;
-  bool done;
-
   std::string* lt;
   std::string* lte;
   std::string* gt;
   std::string* gte;
 
-  int count;
-  int rowCount;
+public:
+  bool keyAsBuffer;
+  bool valueAsBuffer;
 
-  kudu::client::sp::shared_ptr<kudu::client::KuduSession> *session;
-  kudu::client::KuduScanner *scanner;
-  kudu::client::KuduScanBatch *batch;
-  kudu::client::KuduSchema *schema;
+  AsyncWorker* endWorker;
 
-  //kudu::SliceMap keyValueStore;
-
+private:
   bool Read(std::string& key, std::string& value);
 
   kudu::Status iteratorStatus;
@@ -141,38 +130,3 @@ private:
  }
  }
  */
-
-
-//void
-//RtipKuduTable::addPredicates(client::KuduScanner& scanner,
-//                             std::vector<QueryPredicate>& predicates) {
-//
-//  for (size_t x = 0; x < predicates.size(); ++x) {
-//    std::cout << "adding predicate for: " << predicates[x].toJSONString()
-//        << std::endl;
-//
-//    switch (predicates[x].op) {
-//      case ComparisonOperator::EQUAL:
-//      case ComparisonOperator::GREATER:
-//      case ComparisonOperator::GREATER_EQUAL:
-//      case ComparisonOperator::LESS:
-//      case ComparisonOperator::LESS_EQUAL: {
-//        client::KuduPredicate* p = table->NewComparisonPredicate(
-//            predicates[x].columnName, predicates[x].toKuduPredicate(),
-//            client::KuduValue::CopyString(predicates[x].value));
-//        scanner.AddConjunctPredicate(p);
-//        break;
-//      }
-//      case ComparisonOperator::IS_NOT_NULL: {
-//        client::KuduPredicate* p = table->NewIsNotNullPredicate(predicates[x].columnName);
-//        scanner.AddConjunctPredicate(p);
-//        break;
-//      }
-//      case ComparisonOperator::IS_NULL: {
-//        client::KuduPredicate* p = table->NewIsNullPredicate(predicates[x].columnName);
-//        scanner.AddConjunctPredicate(p);
-//        break;
-//      }
-//    }
-//  }
-//}

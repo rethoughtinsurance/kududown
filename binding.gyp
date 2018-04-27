@@ -56,6 +56,7 @@
       , "sources": [
             "src/batch.cc"
           , "src/batch_async.cc"
+          , "src/write_batch.cc"
           , "src/database.cc"
           , "src/database_async.cc"
           , "src/iterator.cc"
