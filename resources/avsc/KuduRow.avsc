@@ -7,21 +7,7 @@
     "name" : "values",
     "type" : {
       "type" : "array",
-      "items" : {
-        "type" : "record",
-        "name" : "KuduDataValue",
-        "fields" : [ {
-          "name" : "dataType",
-          "type" : {
-            "type" : "enum",
-            "name" : "KuduDataType",
-            "symbols" : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
-          }
-        }, {
-          "name" : "value",
-          "type" : [ "null", "string", "bytes" ]
-        } ]
-      }
+      "items" : [ "null", "string", "bytes" ]
     }
   } ]
 }

@@ -31,7 +31,9 @@
                   "deps/kudu/mac/include",
                   "deps/kudu/mac/include/kudu"
                ]
-            , 'libraries': [ '-Wl,-rpath,/home/janet/git/kududown/deps/kudu/mac/lib', '-Wl,-lkudu_client' ]
+            , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/mac/lib',
+                '-Wl,-L,<(module_root_dir)/deps/kudu/mac/lib',
+                '-Wl,-lkudu_client' ]
           }]
         , ['OS == "android"', {
               'cflags': [ '-fPIC' ]

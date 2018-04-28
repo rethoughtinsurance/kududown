@@ -72,12 +72,6 @@ protocol KuduDownSchema {
     map<KuduColumnDef> columns;
   }
 
-  record KuduDataValue {
-    // Only string values or binary for now, they are converted in the Kudu interface
-    KuduDataType dataType;
-    union {null,string,bytes} value;
-  }
-
   enum KuduPredicateType {
     COMPARISON,
     IN_LIST,
@@ -114,7 +108,21 @@ protocol KuduDownSchema {
    * KuduRow holds any row of arbitrary columns for writing or reading.
    */
   record KuduRow {
-    array<KuduDataValue> values;
+    array<union {null,string,bytes}> values;
+  }
+
+  /**
+   * Optionally returned as the first row for a KuduScanResult,
+   * for use with the kududown API, which would then be followed by
+   * KuduRow instances. This can only be used with a kududown
+   * Iterator (`createReadStream`), not with 'get'. If the
+   * KuduScanResultDef row is desired it will be specified in the options:
+   * 'kuduScanResultDef: true'.
+   */
+  record KuduScanResultDef {
+    string scanId;
+    string tableName;
+    array<KuduColumnDef> columnList;
   }
 
   /**
