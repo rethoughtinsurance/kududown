@@ -11,8 +11,10 @@
 
 #include <node.h>
 #include <node_buffer.h>
-//#include <leveldb/slice.h>
 #include <nan.h>
+
+#include <client/client.h>
+#include "kuduoptions.h"
 
 static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
   Nan::HandleScope scope;

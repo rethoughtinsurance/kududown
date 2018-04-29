@@ -5,45 +5,45 @@
 //
 //#include <leveldb/db.h>
 //
-//#include "kududown.h"
-//#include "kududown_async.h"
-//
-//namespace kududown {
-//
-///** DESTROY WORKER **/
-//
-//DestroyWorker::DestroyWorker (
-//    Nan::Utf8String* location
-//  , Nan::Callback *callback
-//) : AsyncWorker(NULL, callback)
-//  , location(location)
-//{};
-//
-//DestroyWorker::~DestroyWorker () {
-//  delete location;
-//}
-//
-//void DestroyWorker::Execute () {
-//  leveldb::Options options;
-//  SetStatus(leveldb::DestroyDB(**location, options));
-//}
-//
-///** REPAIR WORKER **/
-//
-//RepairWorker::RepairWorker (
-//    Nan::Utf8String* location
-//  , Nan::Callback *callback
-//) : AsyncWorker(NULL, callback)
-//  , location(location)
-//{};
-//
-//RepairWorker::~RepairWorker () {
-//  delete location;
-//}
-//
-//void RepairWorker::Execute () {
-//  leveldb::Options options;
-//  SetStatus(leveldb::RepairDB(**location, options));
-//}
-//
-//} // namespace kududown
+#include "kududown.h"
+#include "kududown_async.h"
+
+namespace kududown {
+
+/** DESTROY WORKER **/
+
+DestroyWorker::DestroyWorker (
+    Nan::Utf8String* location
+  , Nan::Callback *callback
+) : AsyncWorker(NULL, callback)
+  , location(location)
+{};
+
+DestroyWorker::~DestroyWorker () {
+  delete location;
+}
+
+void DestroyWorker::Execute () {
+  kududown::Options options;
+  SetStatus(kudu::Status::OK());
+}
+
+/** REPAIR WORKER **/
+
+RepairWorker::RepairWorker (
+    Nan::Utf8String* location
+  , Nan::Callback *callback
+) : AsyncWorker(NULL, callback)
+  , location(location)
+{};
+
+RepairWorker::~RepairWorker () {
+  delete location;
+}
+
+void RepairWorker::Execute () {
+  kududown::Options options;
+  SetStatus(kudu::Status::OK());
+}
+
+} // namespace kududown

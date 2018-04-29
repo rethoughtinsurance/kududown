@@ -22,9 +22,70 @@
 #define STORAGE_LEVELDB_INCLUDE_WRITE_BATCH_H_
 
 #include <string>
+#include <list>
 #include <client/client.h>
 
 namespace kududown {
+
+  class BatchOp {
+  public:
+
+    /**
+     * Construct a new BatchOp with 'd' for a 'delete' operation
+     * or 'p' for a 'put' operation.
+     *
+     * This class takes the ownership of any slices
+     * in its list of values.
+     *
+     * It will release ownership of any values removed via a call
+     * to removeFront().
+     *
+     * NOTE: Any values remaining in this class's list of values
+     * will be deleted in the destructor!
+     */
+    BatchOp(char o) : op(o) {}
+
+    ~BatchOp() {
+      while (!values.empty()) {
+        delete values.front();
+        values.pop_front();
+      }
+    }
+    /**
+     * Adds the new slice to the list of values.
+     */
+    void addValue(kudu::Slice* slice) {
+      values.push_back(slice);
+    }
+
+    /**
+     * Returns and removes the first value from the list of values.
+     */
+    kudu::Slice* removeFront() {
+      kudu::Slice*& s = values.front();
+      values.pop_front();
+      return s;
+    }
+
+    /**
+     * Returns true if there are no values, returns false otherwise.
+     */
+    bool empty() {
+      return values.empty();
+    }
+
+    char getOp() {
+      return op;
+    }
+
+  private:
+    // not allowed
+    BatchOp();
+    BatchOp& operator=(const BatchOp&);
+
+    char op;
+    std::list<kudu::Slice*> values;
+  };
 
   class WriteBatch {
   public:
@@ -32,6 +93,8 @@ namespace kududown {
     ~WriteBatch();
 
     // Store the mapping "key->value" in the database.
+    // in our case, the key won't be used and the value
+    // will be an Avro binary object - KuduMessage?
     void Put(const kudu::Slice& key, const kudu::Slice& value);
 
     // If the database contains a mapping for "key", erase it.  Else do nothing.
@@ -39,6 +102,16 @@ namespace kududown {
 
     // Clear all updates buffered in this batch.
     void Clear();
+
+    bool empty() {
+      return this->ops.empty();
+    }
+
+    BatchOp* removeFront() {
+      BatchOp*& o = ops.front();
+      ops.pop_front();
+      return o;
+    }
 
     // Support for iterating over the contents of a batch.
     class Handler {
@@ -53,8 +126,7 @@ namespace kududown {
     bool hasData;
 
   private:
-
-    std::vector<kudu::client::KuduWriteOperation> writeOps;
+    std::list<BatchOp*> ops;
 
     // Intentionally copyable
   };

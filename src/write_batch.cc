@@ -18,14 +18,12 @@
 
 namespace kududown {
 
-// WriteBatch header has an 8-byte sequence number followed by a 4-byte count.
-  static const size_t kHeader = 12;
-
   WriteBatch::WriteBatch() : hasData(false) {
-    //Clear();
+    Clear();
   }
 
   WriteBatch::~WriteBatch() {
+    Clear();
   }
 
   WriteBatch::Handler::~Handler() {
@@ -33,7 +31,10 @@ namespace kududown {
 
   void
   WriteBatch::Clear() {
-
+    while (!ops.empty()) {
+      delete ops.front();
+      ops.pop_front();
+    }
   }
 
   kudu::Status
@@ -81,12 +82,14 @@ namespace kududown {
 
   void
   WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
-
+    BatchOp* newOp = new BatchOp('p');
+    newOp->addValue(new kudu::Slice(value));
   }
 
   void
   WriteBatch::Delete(const kudu::Slice& key) {
-
+    BatchOp* newOp = new BatchOp('d');
+    newOp->addValue(new kudu::Slice(key));
   }
 
 }// namespace kududown

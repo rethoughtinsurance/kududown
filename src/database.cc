@@ -108,23 +108,28 @@ namespace kududown {
         kuduClientPtr->NewSession();
     kudu::client::KuduUpsert* upsert = tablePtr->NewUpsert();
     kudu::KuduPartialRow* row = upsert->mutable_row();
+
     kudu::Status st = row->SetString(0, key);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
+      session->Close();
       return st;
     }
     st = row->SetString(1, value);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
+      session->Close();
       return st;
     }
 
     st = session->Apply(upsert);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
+      session->Close();
       return st;
     }
 
+    session->Close();
     return kudu::Status::OK();
   }
 
@@ -133,7 +138,7 @@ namespace kududown {
                             std::string& value) {
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
-          "Not connected. Unable to perform write operation.");
+          "Not connected. Unable to perform read operation.");
     }
     if (tablePtr == 0) {
       KUDU_LOG(ERROR)<< tableStatus.ToString();
@@ -150,13 +155,17 @@ namespace kududown {
 
     scanner.AddConjunctPredicate(p);
 
-    scanner.KeepAlive();
+    //scanner.KeepAlive();
     kudu::Status st = scanner.Open();
 
     std::string msg("Unable to get table scanner: ");
     msg.append(st.ToString());
 
-    CHECK_OK_OR_RETURN(st, msg);
+    if (!st.ok()) {
+      KUDU_LOG(ERROR) << st.ToString();
+      scanner.Close();
+      return st;
+    }
 
     kudu::client::KuduScanBatch batch;
 
@@ -174,18 +183,20 @@ namespace kududown {
 
         kudu::client::KuduScanBatch::RowPtr row(*it);
 
-        //for (size_t x = 0; x < schema.num_columns(); ++x) {
+        // TODO fix this when we add projection fields to the schema
+        // and are dealing with tables that have more than 2 columns (i.e. rtip_test)
+        for (size_t x = 0; x < schema.num_columns(); ++x) {
           std::string str;
           kudu::Status st =
-              getSliceAsString(row, schema.Column(1).type(), 1, str);
+              getSliceAsString(row, schema.Column(1).type(), x, str);
           value = str;
-        //}
+        }
       }
     }
     if (num_rows == 0) {
       std::string msg("NotFound: " + key.ToString() + " was not found");
       KUDU_LOG(WARNING) << msg;
-      value.clear();
+      //value.clear();
       return kudu::Status::NotFound(msg);
     }
     return kudu::Status::OK();
@@ -346,9 +357,69 @@ namespace kududown {
   }
 
   kudu::Status
-  Database::WriteBatchToDatabase(WriteOptions * options, WriteBatch * batch) {
-//return db->Write(*options, batch);
-    //return kudu::Status::NotSupported("WriteBatchToDatabase not implemented");
+  Database::WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch) {
+
+    if (kuduClientPtr == 0) {
+      batch->Clear();
+      return kudu::Status::RuntimeError(
+          "Not connected. Unable to perform write batch operation.");
+    }
+    if (tablePtr == 0) {
+      batch->Clear();
+      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      return this->tableStatus;
+    }
+
+    // open a session
+    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
+        kuduClientPtr->NewSession();
+
+    while (!batch->empty()) {
+      BatchOp* op = batch->removeFront();
+
+      kudu::client::KuduWriteOperation* kuduWrite;
+      switch (op->getOp()) {
+        case 'p':
+          kuduWrite = tablePtr->NewUpsert();
+          break;
+        case 'd':
+          kuduWrite = tablePtr->NewDelete();
+          break;
+        default:
+          session->Close();
+          batch->Clear();
+          std::string msg("Unknown batch operation '");
+          msg + op->getOp();
+          msg.append("'. Batch operations must be either 'p' or 'd'.");
+          return kudu::Status::InvalidArgument(msg);
+      }
+
+      kudu::KuduPartialRow* row = kuduWrite->mutable_row();
+      size_t valueCount = 0;
+      while (!op->empty()) {
+        kudu::Slice* sl = op->removeFront();
+
+        kudu::Status st = row->SetString(valueCount++, *sl);
+        delete sl;
+
+        if (!st.ok()) {
+          KUDU_LOG(ERROR)<< st.message();
+          batch->Clear();
+          session->Close();
+          return st;
+        }
+      }
+
+      kudu::Status st = session->Apply(kuduWrite);
+      if (!st.ok()) {
+        KUDU_LOG(ERROR)<< st.message();
+        batch->Clear();
+        session->Close();
+        return st;
+      }
+    }
+
+    session->Close();
     return kudu::Status::OK();
   }
 
