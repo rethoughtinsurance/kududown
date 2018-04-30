@@ -412,9 +412,9 @@ namespace kududown {
       kudu::KuduPartialRow* row = kuduWrite->mutable_row();
 
       for (size_t y = 0; y < op->size(); ++y) {
-        kudu::Slice* sl = op->get(y);
+        std::string& colValue = op->get(y);
         KUDU_LOG(WARNING) << "SETTING STRING for column: " << y;
-        kudu::Status st = row->SetString(y, *sl);
+        kudu::Status st = row->SetString(y, colValue);
 
         if (!st.ok()) {
           KUDU_LOG(ERROR)<< st.message();
@@ -424,6 +424,7 @@ namespace kududown {
         }
       }
       KUDU_LOG(WARNING) << "APPLYING OPERATION";
+
       kudu::Status st = session->Apply(kuduWrite);
       if (!st.ok()) {
         KUDU_LOG(ERROR)<< st.message();
@@ -431,6 +432,7 @@ namespace kududown {
         session->Close();
         return st;
       }
+
       st = session->Flush();
       if (!st.ok()) {
         KUDU_LOG(ERROR)<< st.message();

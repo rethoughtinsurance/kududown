@@ -85,15 +85,15 @@ namespace kududown {
   void
   WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
     BatchOp* newOp = new BatchOp('p');
-    newOp->addValue(new kudu::Slice(key));
-    newOp->addValue(new kudu::Slice(value));
+    newOp->addValue(key.ToString());
+    newOp->addValue(value.ToString());
     this->ops.push_back(newOp);
   }
 
   void
   WriteBatch::Delete(const kudu::Slice& key) {
     BatchOp* newOp = new BatchOp('d');
-    newOp->addValue(new kudu::Slice(key));
+    newOp->addValue(key.ToString());
     this->ops.push_back(newOp);
   }
 

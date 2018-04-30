@@ -46,24 +46,24 @@ namespace kududown {
     BatchOp(char o) : op(o) {}
 
     ~BatchOp() {
-      for (size_t x = 0; x < values.size(); ++x) {
-        delete values[x];
-      }
+//      for (size_t x = 0; x < values.size(); ++x) {
+//        delete values[x];
+//      }
       values.clear();
     }
     /**
      * Adds the new slice to the list of values.
      */
-    void addValue(kudu::Slice* slice) {
-      values.push_back(slice);
+    void addValue(std::string v) {
+      values.push_back(v);
     }
 
     /**
      * Returns a value from the list of values.
      */
-    kudu::Slice* get(size_t x) {
+    std::string& get(size_t x) {
       if (x >= values.size()) {
-        return 0;
+        return *(new std::string());
       }
       return values[x];
     }
@@ -82,7 +82,7 @@ namespace kududown {
     BatchOp& operator=(const BatchOp&);
 
     char op;
-    std::vector<kudu::Slice*> values;
+    std::vector<std::string> values;
   };
 
   class WriteBatch {
