@@ -3,25 +3,23 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-
 #include "batch.h"
 #include "batch_async.h"
 
 namespace kududown {
 
-/** NEXT WORKER **/
+  /** NEXT WORKER **/
 
-BatchWriteWorker::BatchWriteWorker (
-    Batch* batch
-  , Nan::Callback *callback
-) : AsyncWorker(NULL, callback)
-  , batch(batch)
-{};
+  BatchWriteWorker::BatchWriteWorker(Batch* batch, Nan::Callback *callback)
+      : AsyncWorker(NULL, callback), batch(batch) {
+  }
 
-BatchWriteWorker::~BatchWriteWorker () {}
+  BatchWriteWorker::~BatchWriteWorker() {
+  }
 
-void BatchWriteWorker::Execute () {
-  SetStatus(batch->Write());
-}
+  void
+  BatchWriteWorker::Execute() {
+    SetStatus(batch->WriteIt());
+  }
 
 } // namespace kududown

@@ -6,6 +6,8 @@
 #include <node.h>
 #include <node_buffer.h>
 
+#include <fstream>
+
 #include "database.h"
 #include "async.h"
 #include "database_async.h"
@@ -14,6 +16,7 @@
 #include "common.h"
 #include "kududown.h"
 #include "kudu/client/stubs.h"
+#include "tracer.h"
 
 namespace kududown {
 
@@ -31,7 +34,7 @@ namespace kududown {
   }
 
   Database::~Database() {
-
+    //session->Close();
     delete location;
   }
 
@@ -48,13 +51,17 @@ namespace kududown {
 
     if (kuduStatus.ok()) {
       if (opts->tableName.size() > 0) {
-        return openTable(opts->tableName);
+        kuduStatus = openTable(opts->tableName);
       }
       else {
         //throw kudu::Status::InvalidArgument("A table name must be supplied");
-        return openTable("impala::rtip.rtip_test");
+        kuduStatus = openTable("impala::rtip.rtip_test");
       }
     }
+//    if (kuduStatus.ok()) {
+//      session = kuduClientPtr->NewSession();
+//    }
+
     return kuduStatus;
   }
 
@@ -112,30 +119,35 @@ namespace kududown {
     kudu::Status st = row->SetString(0, key);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
-      session->Close();
+      //session->Close();
       return st;
     }
     st = row->SetString(1, value);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
-      session->Close();
+      //session->Close();
       return st;
     }
 
     st = session->Apply(upsert);
     if (!st.ok()) {
       KUDU_LOG(ERROR)<< st.message();
-      session->Close();
+      //session->Close();
       return st;
     }
 
-    session->Close();
+    //session->Close();
     return kudu::Status::OK();
   }
 
   kudu::Status
   Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
                             std::string& value) {
+
+//    node_addon_tracer::tracer::Log("overload_resolution",
+//                                   node_addon_tracer::LogLevel::INFO,
+//                                   std::move("####GET FROM DATABASE####"));
+
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
           "Not connected. Unable to perform read operation.");
@@ -162,8 +174,8 @@ namespace kududown {
     msg.append(st.ToString());
 
     if (!st.ok()) {
-      KUDU_LOG(ERROR) << st.ToString();
       scanner.Close();
+      KUDU_LOG(ERROR) << st.ToString();
       return st;
     }
 
@@ -185,12 +197,12 @@ namespace kududown {
 
         // TODO fix this when we add projection fields to the schema
         // and are dealing with tables that have more than 2 columns (i.e. rtip_test)
-        for (size_t x = 0; x < schema.num_columns(); ++x) {
+        //for (size_t x = 0; x < schema.num_columns(); ++x) {
           std::string str;
           kudu::Status st =
-              getSliceAsString(row, schema.Column(1).type(), x, str);
+              getSliceAsString(row, schema.Column(1).type(), 1, str);
           value = str;
-        }
+        //}
       }
     }
     if (num_rows == 0) {
@@ -360,12 +372,12 @@ namespace kududown {
   Database::WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch) {
 
     if (kuduClientPtr == 0) {
-      batch->Clear();
+      //batch->Clear();
       return kudu::Status::RuntimeError(
           "Not connected. Unable to perform write batch operation.");
     }
     if (tablePtr == 0) {
-      batch->Clear();
+      //batch->Clear();
       KUDU_LOG(ERROR)<< tableStatus.ToString();
       return this->tableStatus;
     }
@@ -373,21 +385,24 @@ namespace kududown {
     // open a session
     kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
         kuduClientPtr->NewSession();
+    session->SetFlushMode(kudu::client::KuduSession::MANUAL_FLUSH);
 
-    while (!batch->empty()) {
-      BatchOp* op = batch->removeFront();
+    KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase, num of batches: " << batch->size();
+    for (size_t x = 0; x < batch->size(); ++x) {
+      BatchOp* op = batch->get(x);
 
       kudu::client::KuduWriteOperation* kuduWrite;
       switch (op->getOp()) {
         case 'p':
+          KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewUpsert";
           kuduWrite = tablePtr->NewUpsert();
           break;
         case 'd':
+          KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewDelete";
           kuduWrite = tablePtr->NewDelete();
           break;
         default:
           session->Close();
-          batch->Clear();
           std::string msg("Unknown batch operation '");
           msg + op->getOp();
           msg.append("'. Batch operations must be either 'p' or 'd'.");
@@ -395,25 +410,30 @@ namespace kududown {
       }
 
       kudu::KuduPartialRow* row = kuduWrite->mutable_row();
-      size_t valueCount = 0;
-      while (!op->empty()) {
-        kudu::Slice* sl = op->removeFront();
 
-        kudu::Status st = row->SetString(valueCount++, *sl);
-        delete sl;
+      for (size_t y = 0; y < op->size(); ++y) {
+        kudu::Slice* sl = op->get(y);
+        KUDU_LOG(WARNING) << "SETTING STRING for column: " << y;
+        kudu::Status st = row->SetString(y, *sl);
 
         if (!st.ok()) {
           KUDU_LOG(ERROR)<< st.message();
-          batch->Clear();
+          //batch->Clear();
           session->Close();
           return st;
         }
       }
-
+      KUDU_LOG(WARNING) << "APPLYING OPERATION";
       kudu::Status st = session->Apply(kuduWrite);
       if (!st.ok()) {
         KUDU_LOG(ERROR)<< st.message();
-        batch->Clear();
+        //batch->Clear();
+        session->Close();
+        return st;
+      }
+      st = session->Flush();
+      if (!st.ok()) {
+        KUDU_LOG(ERROR)<< st.message();
         session->Close();
         return st;
       }
@@ -478,6 +498,7 @@ namespace kududown {
 
   void
   Database::Init() {
+
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
         Database::New);
     database_constructor.Reset(tpl);
@@ -756,10 +777,8 @@ NAN_METHOD(Database::Batch) {
     v8::Local<v8::Object> _this = info.This();
     worker->SaveToPersistent("database", _this);
     Nan::AsyncQueueWorker(worker);
-  } else {
-
-    KUDU_LOG(INFO) << "AT BATCH";
-
+  }
+  else {
     LD_RUN_CALLBACK(callback, 0, NULL);
   }
 }

@@ -9,10 +9,9 @@
 #include <map>
 #include <vector>
 #include <node.h>
+#include <nan.h>
 
 #include <client/client.h>
-
-#include <nan.h>
 
 #include "kududown.h"
 #include "kuduoptions.h"
@@ -82,6 +81,7 @@ namespace kududown {
     Nan::Utf8String* location;
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
     kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
+    //kudu::client::sp::shared_ptr<kudu::client::KuduSession> session;
 
     Options options;
 

@@ -16,6 +16,8 @@
 
 #include "write_batch.h"
 
+using namespace std;
+
 namespace kududown {
 
   WriteBatch::WriteBatch() : hasData(false) {
@@ -31,10 +33,10 @@ namespace kududown {
 
   void
   WriteBatch::Clear() {
-    while (!ops.empty()) {
-      delete ops.front();
-      ops.pop_front();
+    for (size_t i = 0; i < ops.size(); ++i) {
+      delete ops[i];
     }
+    ops.clear();
   }
 
   kudu::Status
@@ -83,13 +85,16 @@ namespace kududown {
   void
   WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
     BatchOp* newOp = new BatchOp('p');
+    newOp->addValue(new kudu::Slice(key));
     newOp->addValue(new kudu::Slice(value));
+    this->ops.push_back(newOp);
   }
 
   void
   WriteBatch::Delete(const kudu::Slice& key) {
     BatchOp* newOp = new BatchOp('d');
     newOp->addValue(new kudu::Slice(key));
+    this->ops.push_back(newOp);
   }
 
 }// namespace kududown

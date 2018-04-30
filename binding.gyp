@@ -17,11 +17,11 @@
           }]
         , ['OS == "linux"', {
                'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
-            ,  'cflags_cc': [ '-frtti'  ]
+            ,  'cflags_cc': [ '--std=c++14' ]
             ,  "include_dirs"  : [
                   "deps/kudu/linux/include"
                ]
-            , 'libraries': [ '-Wl,-rpath,/home/janet/git/kududown/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
+            , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
           }]
         , ['OS == "mac"', {
               'cflags': []
@@ -32,7 +32,7 @@
                   "deps/kudu/mac/include",
                   "deps/kudu/mac/include/kudu"
                ]
-            , 'libraries': [ '-Wl,-rpath,/home/janet/git/kududown/deps/kudu/mac/lib', '-Wl,-lkudu_client' ]
+            , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/mac/lib', '-Wl,-lkudu_client' ]
           }]
         , ['OS == "android"', {
               'cflags': [ '-fPIC' ]
@@ -51,9 +51,11 @@
               ]
           }]
         ]
+        
       , "include_dirs"  : [
             "<!(node -e \"require('nan')\")",
         ]
+      , "libraries": [ "-Wl,-rpath, <(module_root_dir)/deps/logger/node-addon-tracer.a" ]
       , "sources": [
             "src/batch.cc"
           , "src/batch_async.cc"

@@ -22,7 +22,7 @@
 #define STORAGE_LEVELDB_INCLUDE_WRITE_BATCH_H_
 
 #include <string>
-#include <list>
+#include <vector>
 #include <client/client.h>
 
 namespace kududown {
@@ -46,10 +46,10 @@ namespace kududown {
     BatchOp(char o) : op(o) {}
 
     ~BatchOp() {
-      while (!values.empty()) {
-        delete values.front();
-        values.pop_front();
+      for (size_t x = 0; x < values.size(); ++x) {
+        delete values[x];
       }
+      values.clear();
     }
     /**
      * Adds the new slice to the list of values.
@@ -59,19 +59,17 @@ namespace kududown {
     }
 
     /**
-     * Returns and removes the first value from the list of values.
+     * Returns a value from the list of values.
      */
-    kudu::Slice* removeFront() {
-      kudu::Slice*& s = values.front();
-      values.pop_front();
-      return s;
+    kudu::Slice* get(size_t x) {
+      if (x >= values.size()) {
+        return 0;
+      }
+      return values[x];
     }
 
-    /**
-     * Returns true if there are no values, returns false otherwise.
-     */
-    bool empty() {
-      return values.empty();
+    size_t size() {
+      return values.size();
     }
 
     char getOp() {
@@ -84,7 +82,7 @@ namespace kududown {
     BatchOp& operator=(const BatchOp&);
 
     char op;
-    std::list<kudu::Slice*> values;
+    std::vector<kudu::Slice*> values;
   };
 
   class WriteBatch {
@@ -103,14 +101,12 @@ namespace kududown {
     // Clear all updates buffered in this batch.
     void Clear();
 
-    bool empty() {
-      return this->ops.empty();
+    size_t size() {
+      return ops.size();
     }
 
-    BatchOp* removeFront() {
-      BatchOp*& o = ops.front();
-      ops.pop_front();
-      return o;
+    BatchOp* get(size_t index) {
+      return ops[index];
     }
 
     // Support for iterating over the contents of a batch.
@@ -126,7 +122,7 @@ namespace kududown {
     bool hasData;
 
   private:
-    std::list<BatchOp*> ops;
+    std::vector<BatchOp*> ops;
 
     // Intentionally copyable
   };
