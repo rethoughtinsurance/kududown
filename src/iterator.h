@@ -60,6 +60,13 @@ private:
   std::string* gt;
   std::string* gte;
 
+  bool opened;
+  bool inBatch;
+  size_t count, rowCount;
+  bool done;
+  bool ended;
+  bool nexting;
+
 public:
   bool keyAsBuffer;
   bool valueAsBuffer;
@@ -68,6 +75,10 @@ public:
 
 private:
   bool Read(std::string& key, std::string& value);
+
+  kudu::client::KuduScanner* scanner;
+  kudu::client::KuduScanBatch *batch;
+  kudu::client::KuduSchema *schema;
 
   kudu::Status iteratorStatus;
   static NAN_METHOD(New);

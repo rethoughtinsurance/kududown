@@ -62,10 +62,7 @@ namespace kududown {
      * Returns a value from the list of values.
      */
     std::string& get(size_t x) {
-      if (x >= values.size()) {
-        return *(new std::string());
-      }
-      return values[x];
+      return values.at(x);
     }
 
     size_t size() {
@@ -106,18 +103,8 @@ namespace kududown {
     }
 
     BatchOp* get(size_t index) {
-      return ops[index];
+      return ops.at(index);
     }
-
-    // Support for iterating over the contents of a batch.
-    class Handler {
-    public:
-      virtual ~Handler();
-      virtual void Put(const kudu::Slice& key, const kudu::Slice& value) = 0;
-      virtual void Delete(const kudu::Slice& key) = 0;
-    };
-
-    kudu::Status Iterate(Handler* handler) const;
 
     bool hasData;
 

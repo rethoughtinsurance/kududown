@@ -48,6 +48,7 @@ namespace kududown {
 
   class Database : public Nan::ObjectWrap
   {
+    friend class Iterator;
 
   public:
     static void Init();
@@ -56,7 +57,6 @@ namespace kududown {
 
     Database(const v8::Local<v8::Value>& from);
     ~Database();
-
 
     kudu::Status OpenDatabase(Options* options);
     kudu::Status PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
@@ -77,12 +77,14 @@ namespace kududown {
     void CloseDatabase();
     void ReleaseIterator(uint32_t id);
 
-  private:
+    kudu::client::sp::shared_ptr<kudu::client::KuduSession> openSession();
+
+  protected:
     Nan::Utf8String* location;
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
     kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
     //kudu::client::sp::shared_ptr<kudu::client::KuduSession> session;
-
+  private:
     Options options;
 
     kudu::Status tableStatus;

@@ -51,7 +51,9 @@
               ]
           }]
         ]
-        
+      , "dependencies":[
+             "<!(node -e \"require('node-addon-tracer')\"):node-addon-tracer"
+        ]
       , "include_dirs"  : [
             "<!(node -e \"require('nan')\")",
         ]
@@ -66,6 +68,7 @@
           , "src/iterator_async.cc"
           , "src/kududown.cc"
           , "src/kududown_async.cc"
+
         ]
     }]
 }

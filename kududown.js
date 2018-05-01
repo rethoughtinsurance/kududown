@@ -6,6 +6,21 @@ const util              = require('util')
     , ChainedBatch      = require('./chained-batch')
     , Iterator          = require('./iterator')
 
+var addon = require('../../build/Release/kududown');
+
+if (addon == null) {
+  addon = require('../../build/Debug/kududown');
+}
+
+if (addon == null) {
+  console.log("Unable to load logging module");
+}
+
+function logger(module, logLevel, message) {
+	console.log("#####LOGGER", module, logLevel, message);
+}
+
+addon.RegisterLogger(logger);
 
 function KuduDOWN (location) {
   if (!(this instanceof KuduDOWN))

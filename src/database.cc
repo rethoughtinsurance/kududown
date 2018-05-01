@@ -40,6 +40,11 @@ namespace kududown {
 
   /* Calls from worker threads, NO V8 HERE *****************************/
 
+  kudu::client::sp::shared_ptr<kudu::client::KuduSession>
+  Database::openSession() {
+    return kuduClientPtr->NewSession();
+  }
+
   kudu::Status
   Database::OpenDatabase(Options* opts) {
     if (!opts) {
@@ -144,9 +149,9 @@ namespace kududown {
   Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
                             std::string& value) {
 
-//    node_addon_tracer::tracer::Log("overload_resolution",
-//                                   node_addon_tracer::LogLevel::INFO,
-//                                   std::move("####GET FROM DATABASE####"));
+    node_addon_tracer::tracer::Log("Database",
+                                   node_addon_tracer::LogLevel::INFO,
+                                   "####GET FROM DATABASE####");
 
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(

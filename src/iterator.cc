@@ -16,20 +16,41 @@ namespace kududown {
   static Nan::Persistent<v8::FunctionTemplate> iterator_constructor;
 
   Iterator::Iterator(Database* database, uint32_t id, kudu::Slice* start,
-                     std::string* end, bool keys, bool values,
-                     int limit, std::string* lt, std::string* lte,
-                     std::string* gt, std::string* gte, bool fillCache,
-                     bool keyAsBuffer, bool valueAsBuffer)
-      : database(database), id(id), start(start), end(end), keys(
-          keys), values(values), limit(limit), lt(lt), lte(lte), gt(gt), gte(
-          gte), keyAsBuffer(keyAsBuffer), valueAsBuffer(
-          valueAsBuffer) {
+                     std::string* end, bool keys, bool values, int limit,
+                     std::string* lt, std::string* lte, std::string* gt,
+                     std::string* gte, bool fillCache, bool keyAsBuffer,
+                     bool valueAsBuffer)
+      : database(database), id(id), start(start), end(end), keys(keys),
+        values(values), limit(limit), lt(lt), lte(lte), gt(gt), gte(gte),
+        opened(false), inBatch(false), count(0), rowCount(0), done(false),
+        ended(false), nexting(false), keyAsBuffer(keyAsBuffer),
+        valueAsBuffer(valueAsBuffer), scanner(0), batch(0), schema(0)
+  {
 
     Nan::HandleScope scope;
 
     options = new ReadOptions();
 
     endWorker = NULL;
+
+    // create the Scanner
+    scanner = new kudu::client::KuduScanner(database->tablePtr.get());
+
+    // add our predicates
+    //addPredicates(scanner, predicates);
+
+    scanner->KeepAlive();
+    kudu::Status st = scanner->Open();
+
+    std::string msg("Unable to get table scanner: ");
+    msg.append(st.ToString());
+
+    if (!st.ok()) {
+      KUDU_LOG(ERROR)<< st.ToString();
+    }
+    else {
+      opened = true;
+    }
   }
 
   Iterator::~Iterator() {
@@ -58,12 +79,79 @@ namespace kududown {
 
   bool
   Iterator::Read(std::string& key, std::string& value) {
-    return false;
+    if (!opened) {
+      return false;
+    }
+
+    if (!inBatch || rowCount == 0 || count >= rowCount) {
+      count = 0;
+      rowCount = 0;
+      // get another batch
+      if (scanner->HasMoreRows()) {
+        scanner->NextBatch(batch);
+
+        if (schema == 0) {
+          *schema = scanner->GetProjectionSchema();
+        }
+
+        rowCount = batch->NumRows();
+        if (rowCount == 0) {
+          KUDU_LOG(ERROR)<< "Unexpected row count of 0 from KuduScanBatch";
+          return false;
+        }
+        count = 0;
+        inBatch = true;
+        done = false;
+      }
+      else {
+        scanner->Close();
+        inBatch = false;
+        done = true;
+        return false;
+      }
+    }
+
+    // get the next row
+    kudu::client::KuduScanBatch::RowPtr row = batch->Row(count);
+    ++count;
+
+    std::string newRow;
+
+    for (size_t x = 0; x < schema->num_columns(); ++x) {
+      std::string str;
+      kudu::Status st = database->getSliceAsString(row,
+                                                   schema->Column(x).type(), x,
+                                                   str);
+      newRow.append(str);
+      if (x + 1 < schema->num_columns())
+        newRow.append(",");
+    }
+
+    KUDU_LOG(INFO)<< "Fetched a row: " << newRow;
+
+    //if (keys)
+    //key.assign(dbIterator->key().data(), dbIterator->key().size());
+    //if (values)
+    //value.assign(dbIterator->value().data(), dbIterator->value().size());
+    return true;
   }
 
-
   bool
-  Iterator::IteratorNext(std::vector<std::pair<std::string, std::string> >& result) {
+  Iterator::IteratorNext(
+      std::vector<std::pair<std::string, std::string> >& result) {
+    size_t size = 0;
+    while (true) {
+      std::string key, value;
+      bool ok = Read(key, value);
+
+      if (ok) {
+        result.push_back(std::make_pair(key, value));
+        size = size + key.size() + value.size();
+      }
+      else {
+        return false;
+      }
+    }
     return false;
   }
 
@@ -74,6 +162,7 @@ namespace kududown {
 
   void
   Iterator::IteratorEnd() {
+    ended = true;
   }
 
   void
@@ -90,9 +179,9 @@ namespace kududown {
     }
   }
 
-  NAN_METHOD(Iterator::Seek) {
-    return Nan::ThrowError(Nan::New("Iterator::Seek - is not supported.").ToLocalChecked());
-  }
+  NAN_METHOD(Iterator::Seek){
+  return Nan::ThrowError(Nan::New("Iterator::Seek - is not supported.").ToLocalChecked());
+}
 //  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
 //
 //  iterator->ReleaseTarget();
@@ -152,63 +241,63 @@ namespace kududown {
 //  info.GetReturnValue().Set(info.Holder());
 //}
 
-  NAN_METHOD(Iterator::Next) {
-    Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
+NAN_METHOD(Iterator::Next){
+  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
 
-    if (!info[0]->IsFunction()) {
-      return Nan::ThrowError("next() requires a callback argument");
-    }
-
-    v8::Local<v8::Function> callback = info[0].As<v8::Function>();
-
-//    if (iterator->ended) {
-//      LD_RETURN_CALLBACK_OR_ERROR(callback, "iterator has ended");
-//    }
-
-    NextWorker* worker =
-        new NextWorker(iterator, new Nan::Callback(callback), checkEndCallback);
-
-    // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = info.This();
-    worker->SaveToPersistent("iterator", _this);
-    //iterator->nexting = true;
-    Nan::AsyncQueueWorker(worker);
-
-    info.GetReturnValue().Set(info.Holder());
+  if (!info[0]->IsFunction()) {
+    return Nan::ThrowError("next() requires a callback argument");
   }
 
-  NAN_METHOD(Iterator::End) {
-    Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
+  v8::Local<v8::Function> callback = info[0].As<v8::Function>();
 
-    if (!info[0]->IsFunction()) {
-      return Nan::ThrowError("end() requires a callback argument");
-    }
-
-    //if (!iterator->ended) {
-      v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(info[0]);
-
-      EndWorker* worker = new EndWorker(iterator, new Nan::Callback(callback));
-      // persist to prevent accidental GC
-      v8::Local<v8::Object> _this = info.This();
-      worker->SaveToPersistent("iterator", _this);
-      //iterator->ended = true;
-
-      //if (iterator->nexting) {
-        // waiting for a next() to return, queue the end
-      //  iterator->endWorker = worker;
-      //}
-      //else {
-        Nan::AsyncQueueWorker(worker);
-      //}
-    //}
-
-    info.GetReturnValue().Set(info.Holder());
+  if (iterator->ended) {
+    LD_RETURN_CALLBACK_OR_ERROR(callback, "iterator has ended");
   }
+
+  NextWorker* worker =
+      new NextWorker(iterator, new Nan::Callback(callback), checkEndCallback);
+
+  // persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("iterator", _this);
+  iterator->nexting = true;
+  Nan::AsyncQueueWorker(worker);
+
+  info.GetReturnValue().Set(info.Holder());
+}
+
+  NAN_METHOD(Iterator::End){
+  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
+
+  if (!info[0]->IsFunction()) {
+    return Nan::ThrowError("end() requires a callback argument");
+  }
+
+  //if (!iterator->ended) {
+  v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(info[0]);
+
+  EndWorker* worker = new EndWorker(iterator, new Nan::Callback(callback));
+  // persist to prevent accidental GC
+  v8::Local<v8::Object> _this = info.This();
+  worker->SaveToPersistent("iterator", _this);
+  //iterator->ended = true;
+
+  //if (iterator->nexting) {
+  // waiting for a next() to return, queue the end
+  //  iterator->endWorker = worker;
+  //}
+  //else {
+  Nan::AsyncQueueWorker(worker);
+  //}
+  //}
+
+  info.GetReturnValue().Set(info.Holder());
+}
 
   void
   Iterator::Init() {
-    v8::Local<v8::FunctionTemplate> tpl =
-        Nan::New<v8::FunctionTemplate>(Iterator::New);
+    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
+        Iterator::New);
     iterator_constructor.Reset(tpl);
     tpl->SetClassName(Nan::New("Iterator").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
@@ -247,180 +336,181 @@ namespace kududown {
     return scope.Escape(instance);
   }
 
-  NAN_METHOD(Iterator::New) {
+  NAN_METHOD(Iterator::New){
 
-    Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
+Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
 
-    kudu::Slice* start = NULL;
-    std::string* end = NULL;
-    int limit = -1;
-    // default highWaterMark from Readble-streams
-    //size_t highWaterMark = 16 * 1024;
-    v8::Local<v8::Value> id = info[1];
-    v8::Local<v8::Object> optionsObj;
-    v8::Local<v8::Object> ltHandle;
-    v8::Local<v8::Object> lteHandle;
-    v8::Local<v8::Object> gtHandle;
-    v8::Local<v8::Object> gteHandle;
+kudu::Slice* start = NULL;
+std::string* end = NULL;
+int limit = -1;
+// default highWaterMark from Readble-streams
+//size_t highWaterMark = 16 * 1024;
+v8::Local<v8::Value> id = info[1];
+v8::Local<v8::Object> optionsObj;
+v8::Local<v8::Object> ltHandle;
+v8::Local<v8::Object> lteHandle;
+v8::Local<v8::Object> gtHandle;
+v8::Local<v8::Object> gteHandle;
 
-    char *startStr = NULL;
-    std::string* lt = NULL;
-    std::string* lte = NULL;
-    std::string* gt = NULL;
-    std::string* gte = NULL;
+char *startStr = NULL;
+std::string* lt = NULL;
+std::string* lte = NULL;
+std::string* gt = NULL;
+std::string* gte = NULL;
 
-    //default to forward.
-    bool reverse = false;
+//default to forward.
+bool reverse = false;
 
-    if (info.Length() > 1 && info[2]->IsObject()) {
-      optionsObj = v8::Local<v8::Object>::Cast(info[2]);
+if (info.Length() > 1 && info[2]->IsObject()) {
+  optionsObj = v8::Local<v8::Object>::Cast(info[2]);
 
-      reverse = BooleanOptionValue(optionsObj, "reverse");
+  reverse = BooleanOptionValue(optionsObj, "reverse");
 
-      if (optionsObj->Has(Nan::New("start").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
-              || optionsObj->Get(Nan::New("start").ToLocalChecked())->IsString())) {
+  if (optionsObj->Has(Nan::New("start").ToLocalChecked())
+      && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("start").ToLocalChecked())->IsString())) {
 
-        v8::Local<v8::Value> startBuffer = optionsObj->Get(Nan::New("start").ToLocalChecked());
+    v8::Local<v8::Value> startBuffer = optionsObj->Get(Nan::New("start").ToLocalChecked());
 
-        // ignore start if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(startBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
-          start = new kudu::Slice(_startCh_, _startSz_);
-          startStr = _startCh_;
-        }
-      }
+    // ignore start if it has size 0 since a Slice can't have length 0
+    if (StringOrBufferLength(startBuffer) > 0) {
+      LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
+      start = new kudu::Slice(_startCh_, _startSz_);
+      startStr = _startCh_;
+    }
+  }
 
-      if (optionsObj->Has(Nan::New("end").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("end").ToLocalChecked()))
-              || optionsObj->Get(Nan::New("end").ToLocalChecked())->IsString())) {
+  if (optionsObj->Has(Nan::New("end").ToLocalChecked())
+      && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("end").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("end").ToLocalChecked())->IsString())) {
 
-        v8::Local<v8::Value> endBuffer = optionsObj->Get(Nan::New("end").ToLocalChecked());
+    v8::Local<v8::Value> endBuffer = optionsObj->Get(Nan::New("end").ToLocalChecked());
 
-        // ignore end if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(endBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_end, endBuffer, end)
-          end = new std::string(_endCh_, _endSz_);
-          delete[] _endCh_;
-        }
-      }
+    // ignore end if it has size 0 since a Slice can't have length 0
+    if (StringOrBufferLength(endBuffer) > 0) {
+      LD_STRING_OR_BUFFER_TO_COPY(_end, endBuffer, end)
+      end = new std::string(_endCh_, _endSz_);
+      delete[] _endCh_;
+    }
+  }
 
-      if (!optionsObj.IsEmpty() && optionsObj->Has(Nan::New("limit").ToLocalChecked())) {
-        limit = v8::Local<v8::Integer>::Cast(optionsObj->Get(
-                  Nan::New("limit").ToLocalChecked()))->Value();
-      }
+  if (!optionsObj.IsEmpty() && optionsObj->Has(Nan::New("limit").ToLocalChecked())) {
+    limit = v8::Local<v8::Integer>::Cast(optionsObj->Get(
+            Nan::New("limit").ToLocalChecked()))->Value();
+  }
 
 //      if (optionsObj->Has(Nan::New("highWaterMark").ToLocalChecked())) {
 //        highWaterMark =
 //            v8::Local<v8::Integer>::Cast(optionsObj->Get(Nan::New("highWaterMark").ToLocalChecked()))->Value();
 //      }
 
-      if (optionsObj->Has(Nan::New("lt").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lt").ToLocalChecked()))
+  if (optionsObj->Has(Nan::New("lt").ToLocalChecked())
+      && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lt").ToLocalChecked()))
           || optionsObj->Get(Nan::New("lt").ToLocalChecked())->IsString())) {
 
-        v8::Local<v8::Value> ltBuffer = optionsObj->Get(Nan::New("lt").ToLocalChecked());
+    v8::Local<v8::Value> ltBuffer = optionsObj->Get(Nan::New("lt").ToLocalChecked());
 
-        // ignore end if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(ltBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_lt, ltBuffer, lt)
-          lt = new std::string(_ltCh_, _ltSz_);
-          delete[] _ltCh_;
-          if (reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(lt->data(), lt->size());
-          }
+    // ignore end if it has size 0 since a Slice can't have length 0
+    if (StringOrBufferLength(ltBuffer) > 0) {
+      LD_STRING_OR_BUFFER_TO_COPY(_lt, ltBuffer, lt)
+      lt = new std::string(_ltCh_, _ltSz_);
+      delete[] _ltCh_;
+      if (reverse) {
+        if (startStr != NULL) {
+          delete[] startStr;
+          startStr = NULL;
         }
-      }
-
-      if (optionsObj->Has(Nan::New("lte").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lte").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("lte").ToLocalChecked())->IsString())) {
-
-        v8::Local<v8::Value> lteBuffer = optionsObj->Get(Nan::New("lte").ToLocalChecked());
-
-        // ignore end if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(lteBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_lte, lteBuffer, lte)
-          lte = new std::string(_lteCh_, _lteSz_);
-          delete[] _lteCh_;
-          if (reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(lte->data(), lte->size());
-          }
-        }
-      }
-
-      if (optionsObj->Has(Nan::New("gt").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gt").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("gt").ToLocalChecked())->IsString())) {
-
-        v8::Local<v8::Value> gtBuffer = optionsObj->Get(Nan::New("gt").ToLocalChecked());
-
-        // ignore end if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(gtBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_gt, gtBuffer, gt)
-          gt = new std::string(_gtCh_, _gtSz_);
-          delete[] _gtCh_;
-          if (!reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(gt->data(), gt->size());
-          }
-        }
-      }
-
-      if (optionsObj->Has(Nan::New("gte").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gte").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("gte").ToLocalChecked())->IsString())) {
-
-        v8::Local<v8::Value> gteBuffer = optionsObj->Get(Nan::New("gte").ToLocalChecked());
-
-        // ignore end if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(gteBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_gte, gteBuffer, gte)
-          gte = new std::string(_gteCh_, _gteSz_);
-          delete[] _gteCh_;
-          if (!reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(gte->data(), gte->size());
-          }
-        }
+        if (start != NULL)
+        delete start;
+        start = new kudu::Slice(lt->data(), lt->size());
       }
     }
+  }
 
-    bool keys = BooleanOptionValue(optionsObj, "keys", true);
-    bool values = BooleanOptionValue(optionsObj, "values", true);
-    bool keyAsBuffer = BooleanOptionValue(optionsObj, "keyAsBuffer", true);
-    bool valueAsBuffer = BooleanOptionValue(optionsObj, "valueAsBuffer", true);
-    bool fillCache = BooleanOptionValue(optionsObj, "fillCache");
+  if (optionsObj->Has(Nan::New("lte").ToLocalChecked())
+      && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lte").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("lte").ToLocalChecked())->IsString())) {
 
-    Iterator* iterator = new Iterator(database, (uint32_t)id->Int32Value(),
-                                      start, end, keys, values,
-                                      limit, lt, lte, gt, gte, fillCache,
-                                      keyAsBuffer, valueAsBuffer);
-    iterator->Wrap(info.This());
+    v8::Local<v8::Value> lteBuffer = optionsObj->Get(Nan::New("lte").ToLocalChecked());
 
-    info.GetReturnValue().Set(info.This());
-  } // NAN_METHOD(Iterator::New)
+    // ignore end if it has size 0 since a Slice can't have length 0
+    if (StringOrBufferLength(lteBuffer) > 0) {
+      LD_STRING_OR_BUFFER_TO_COPY(_lte, lteBuffer, lte)
+      lte = new std::string(_lteCh_, _lteSz_);
+      delete[] _lteCh_;
+      if (reverse) {
+        if (startStr != NULL) {
+          delete[] startStr;
+          startStr = NULL;
+        }
+        if (start != NULL)
+        delete start;
+        start = new kudu::Slice(lte->data(), lte->size());
+      }
+    }
+  }
 
-}  // namespace kududown
+  if (optionsObj->Has(Nan::New("gt").ToLocalChecked())
+      && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gt").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("gt").ToLocalChecked())->IsString())) {
+
+    v8::Local<v8::Value> gtBuffer = optionsObj->Get(Nan::New("gt").ToLocalChecked());
+
+    // ignore end if it has size 0 since a Slice can't have length 0
+    if (StringOrBufferLength(gtBuffer) > 0) {
+      LD_STRING_OR_BUFFER_TO_COPY(_gt, gtBuffer, gt)
+      gt = new std::string(_gtCh_, _gtSz_);
+      delete[] _gtCh_;
+      if (!reverse) {
+        if (startStr != NULL) {
+          delete[] startStr;
+          startStr = NULL;
+        }
+        if (start != NULL)
+        delete start;
+        start = new kudu::Slice(gt->data(), gt->size());
+      }
+    }
+  }
+
+  if (optionsObj->Has(Nan::New("gte").ToLocalChecked())
+      && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gte").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("gte").ToLocalChecked())->IsString())) {
+
+    v8::Local<v8::Value> gteBuffer = optionsObj->Get(Nan::New("gte").ToLocalChecked());
+
+    // ignore end if it has size 0 since a Slice can't have length 0
+    if (StringOrBufferLength(gteBuffer) > 0) {
+      LD_STRING_OR_BUFFER_TO_COPY(_gte, gteBuffer, gte)
+      gte = new std::string(_gteCh_, _gteSz_);
+      delete[] _gteCh_;
+      if (!reverse) {
+        if (startStr != NULL) {
+          delete[] startStr;
+          startStr = NULL;
+        }
+        if (start != NULL)
+        delete start;
+        start = new kudu::Slice(gte->data(), gte->size());
+      }
+    }
+  }
+}
+
+bool keys = BooleanOptionValue(optionsObj, "keys", true);
+bool values = BooleanOptionValue(optionsObj, "values", true);
+bool keyAsBuffer = BooleanOptionValue(optionsObj, "keyAsBuffer", true);
+bool valueAsBuffer = BooleanOptionValue(optionsObj, "valueAsBuffer", true);
+bool fillCache = BooleanOptionValue(optionsObj, "fillCache");
+
+Iterator* iterator = new Iterator(database, (uint32_t)id->Int32Value(),
+    start, end, keys, values,
+    limit, lt, lte, gt, gte, fillCache,
+    keyAsBuffer, valueAsBuffer);
+iterator->Wrap(info.This());
+
+info.GetReturnValue().Set(info.This());
+} // NAN_METHOD(Iterator::New)
+
+}
+ // namespace kududown
