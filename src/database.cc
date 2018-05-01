@@ -151,7 +151,7 @@ namespace kududown {
 
     node_addon_tracer::tracer::Log("Database",
                                    node_addon_tracer::LogLevel::INFO,
-                                   "####GET FROM DATABASE####");
+                                   "");
 
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
@@ -466,16 +466,16 @@ namespace kududown {
     *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 
-  Iterator*
-  Database::NewIterator(Database* database, uint32_t id, kudu::Slice* start,
-      std::string* end, bool reverse, bool keys, bool values,
-      int limit, std::string* lt, std::string* lte,
-      std::string* gt, std::string* gte, bool fillCache,
-      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark) {
-
-    return new kududown::Iterator(database, id, start, end, keys, values, limit,
-        lt, lte, gt, gte, fillCache, keyAsBuffer, valueAsBuffer);
-  }
+//  Iterator*
+//  Database::NewIterator(Database* database, uint32_t id, kudu::Slice* start,
+//      std::string* end, bool reverse, bool keys, bool values,
+//      int limit, std::string* lt, std::string* lte,
+//      std::string* gt, std::string* gte, bool fillCache,
+//      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark) {
+//
+//    return new kududown::Iterator(database, id, start, end, keys, values, limit,
+//        lt, lte, gt, gte, fillCache, keyAsBuffer, valueAsBuffer);
+//  }
 
   void
   Database::ReleaseIterator(uint32_t id) {

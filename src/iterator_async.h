@@ -16,8 +16,8 @@ namespace kududown {
 
   class NextWorker : public AsyncWorker {
   public:
-    NextWorker(Iterator* iterator, Nan::Callback *callback, void
-    (*localCallback)(Iterator*));
+    NextWorker(Iterator* iterator, Nan::Callback *callback,
+               void (*localCallback)(Iterator*));
 
     virtual ~NextWorker();
     virtual void Execute();
