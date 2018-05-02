@@ -151,7 +151,7 @@ namespace kududown {
 
     node_addon_tracer::tracer::Log("Database",
                                    node_addon_tracer::LogLevel::INFO,
-                                   "");
+                                   "####GET FROM DATABASE####");
 
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
@@ -392,6 +392,8 @@ namespace kududown {
         kuduClientPtr->NewSession();
     session->SetFlushMode(kudu::client::KuduSession::MANUAL_FLUSH);
 
+    kudu::Status st;
+
     KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase, num of batches: " << batch->size();
     for (size_t x = 0; x < batch->size(); ++x) {
       BatchOp* op = batch->get(x);
@@ -399,14 +401,20 @@ namespace kududown {
       kudu::client::KuduWriteOperation* kuduWrite;
       switch (op->getOp()) {
         case 'p':
-          KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewUpsert";
+          //KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewUpsert";
           kuduWrite = tablePtr->NewUpsert();
           break;
         case 'd':
-          KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewDelete";
+          //KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewDelete";
           kuduWrite = tablePtr->NewDelete();
           break;
         default:
+          st = session->Flush();
+          if (!st.ok()) {
+            KUDU_LOG(ERROR)<< st.message();
+            session->Close();
+            return st;
+          }
           session->Close();
           std::string msg("Unknown batch operation '");
           msg + op->getOp();
@@ -424,13 +432,19 @@ namespace kududown {
         if (!st.ok()) {
           KUDU_LOG(ERROR)<< st.message();
           //batch->Clear();
+          st = session->Flush();
+          if (!st.ok()) {
+            KUDU_LOG(ERROR)<< st.message();
+            session->Close();
+            return st;
+          }
           session->Close();
           return st;
         }
       }
       KUDU_LOG(WARNING) << "APPLYING OPERATION";
 
-      kudu::Status st = session->Apply(kuduWrite);
+      st = session->Apply(kuduWrite);
       if (!st.ok()) {
         KUDU_LOG(ERROR)<< st.message();
         //batch->Clear();
@@ -438,14 +452,19 @@ namespace kududown {
         return st;
       }
 
-      st = session->Flush();
-      if (!st.ok()) {
-        KUDU_LOG(ERROR)<< st.message();
-        session->Close();
-        return st;
-      }
+//      st = session->Flush();
+//      if (!st.ok()) {
+//        KUDU_LOG(ERROR)<< st.message();
+//        session->Close();
+//        return st;
+//      }
     }
-
+    st = session->Flush();
+    if (!st.ok()) {
+      KUDU_LOG(ERROR)<< st.message();
+      session->Close();
+      return st;
+    }
     session->Close();
     return kudu::Status::OK();
   }
@@ -466,17 +485,6 @@ namespace kududown {
     *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 
-//  Iterator*
-//  Database::NewIterator(Database* database, uint32_t id, kudu::Slice* start,
-//      std::string* end, bool reverse, bool keys, bool values,
-//      int limit, std::string* lt, std::string* lte,
-//      std::string* gt, std::string* gte, bool fillCache,
-//      bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark) {
-//
-//    return new kududown::Iterator(database, id, start, end, keys, values, limit,
-//        lt, lte, gt, gte, fillCache, keyAsBuffer, valueAsBuffer);
-//  }
-
   void
   Database::ReleaseIterator(uint32_t id) {
 // called each time an Iterator is End()ed, in the main thread
@@ -494,6 +502,8 @@ namespace kududown {
 
   void
   Database::CloseDatabase() {
+    // check to see if there are any iterators still pending
+    // or if any batch operations are in effect?
   }
 
   /* V8 exposed functions *****************************/

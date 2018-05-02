@@ -19,7 +19,7 @@ namespace kududown {
 class Database;
 
 class Iterator : public Nan::ObjectWrap {
-  friend class NextWorker;
+
 public:
   static void Init();
 
@@ -27,10 +27,10 @@ public:
   NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
       v8::Local<v8::Object> optionsObj);
 
-  Iterator(Database* database, uint32_t id, bool keys, bool values, int limit,
-      int highWaterMark, std::string* lt, std::string* lte,
-      std::string* gt, std::string* gte,
-      bool keyAsBuffer, bool valueAsBuffer);
+  Iterator(Database* database, uint32_t id, kudu::Slice* start,
+      std::string* end, bool keys, bool values, int limit,
+      std::string* lt, std::string* lte, std::string* gt, std::string* gte,
+      bool fillCache, bool keyAsBuffer, bool valueAsBuffer);
 
   ~Iterator();
 
@@ -42,35 +42,34 @@ public:
 
   void Release();
 
+
+private:
+  Database* database;
+  uint32_t id;
+  //Iterator* dbIterator;
+  ReadOptions* options;
+  kudu::Slice* start;
+
+  std::string* end;
+
+  bool keys;
+  bool values;
+  int limit;
+  std::string* lt;
+  std::string* lte;
+  std::string* gt;
+  std::string* gte;
+
+public:
+  bool keyAsBuffer;
+  bool valueAsBuffer;
+
   AsyncWorker* endWorker;
 
 private:
   bool Read(std::string& key, std::string& value);
 
-  Database* database;
-  uint32_t id;
-  bool keys;
-  bool values;
-  int limit, highWaterMark;
-  std::string* lt;
-  std::string* lte;
-  std::string* gt;
-  std::string* gte;
-  bool keyAsBuffer;
-  bool valueAsBuffer;
-
-  bool opened;
-  bool inBatch;
-  size_t count, rowCount;
-  bool done;
-  bool ended;
-  bool nexting;
-
-  kudu::client::KuduScanner* scanner;
-  kudu::client::KuduScanBatch* batch;
-  kudu::client::KuduSchema* schema;
   kudu::Status iteratorStatus;
-
   static NAN_METHOD(New);
   static NAN_METHOD(Seek);
   static NAN_METHOD(Next);
