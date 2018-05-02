@@ -10,6 +10,9 @@
 #include "iterator.h"
 #include "iterator_async.h"
 #include "common.h"
+#include "tracer.h"
+
+using namespace node_addon_tracer;
 
 namespace kududown {
 
@@ -36,10 +39,25 @@ namespace kududown {
     options = new ReadOptions();
 
     endWorker = NULL;
+
+    // create the Scanner
+    scanner = 0;
+    scanner = new kudu::client::KuduScanner(database->tablePtr.get());
+    scanner->SetOrderMode(kudu::client::KuduScanner::OrderMode::ORDERED);
+    scanner->KeepAlive();
+    iteratorStatus = scanner->Open();
+
+    if (!iteratorStatus.ok()) {
+      scanner->Close();
+      delete scanner;
+      scanner = 0;
+      tracer::Log("Iterator", LogLevel::DEBUG, iteratorStatus.ToString());
+    }
   }
 
   Iterator::~Iterator() {
     delete options;
+    delete scanner;
 
     if (start != NULL) {
       // Special case for `start` option: it won't be
@@ -62,14 +80,57 @@ namespace kududown {
       delete gte;
   }
 
-  bool
-  Iterator::Read(std::string& key, std::string& value) {
-    return false;
-  }
-
 
   bool
   Iterator::IteratorNext(std::vector<std::pair<std::string, std::string> >& result) {
+    // TODO don't exceed the highWaterMark
+    //size_t size = 0;
+    if (!iteratorStatus.ok()) {
+      return false;
+    }
+
+    if (limit < 0 || ++count <= limit) {
+      int num_rows = 0;
+
+      kudu::client::KuduScanBatch batch;
+
+      while (scanner->HasMoreRows()) {
+        scanner->NextBatch(&batch);
+
+        if (batch.NumRows() > 0) {
+          tracer::Log("Iterator", LogLevel::DEBUG, "Reading rows from iterator");
+        }
+        num_rows += batch.NumRows();
+
+        char tmp[128];
+        sprintf(tmp, "%d", batch.NumRows());
+        tracer::Log("Database", LogLevel::TRACE,
+                    std::string("Got next batch with ") + tmp + " rows.");
+        // TODO num_rows > 1 ??
+        kudu::client::KuduSchema schema = scanner->GetProjectionSchema();
+
+        for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
+            it != batch.end(); ++it) {
+
+          kudu::client::KuduScanBatch::RowPtr row(*it);
+
+          tracer::Log("Database", LogLevel::TRACE, "Read row: " + row.ToString());
+          // TODO fix this when we add projection fields to the schema
+          // and are dealing with tables that have more than 2 columns (i.e. rtip_test)
+          //for (size_t x = 0; x < schema.num_columns(); ++x) {
+          std::string key, value;
+          kudu::Status st =
+              Database::getSliceAsString(row, schema.Column(0).type(), 0, key);
+          st =
+              Database::getSliceAsString(row, schema.Column(1).type(), 1, value);
+
+          tracer::Log("Iterator", LogLevel::TRACE, "Read key: " + key);
+          tracer::Log("Iterator", LogLevel::TRACE, "Read value: " + value);
+          result.push_back(std::make_pair(key, value));
+        }
+      }
+      return true;
+    }
     return false;
   }
 
@@ -167,9 +228,9 @@ namespace kududown {
 
     v8::Local<v8::Function> callback = info[0].As<v8::Function>();
 
-//    if (iterator->ended) {
-//      LD_RETURN_CALLBACK_OR_ERROR(callback, "iterator has ended");
-//    }
+    if (iterator->ended) {
+      LD_RETURN_CALLBACK_OR_ERROR(callback, "iterator has ended");
+    }
 
     NextWorker* worker =
         new NextWorker(iterator, new Nan::Callback(callback), checkEndCallback);
@@ -177,7 +238,7 @@ namespace kududown {
     // persist to prevent accidental GC
     v8::Local<v8::Object> _this = info.This();
     worker->SaveToPersistent("iterator", _this);
-    //iterator->nexting = true;
+    iterator->nexting = true;
     Nan::AsyncQueueWorker(worker);
 
     info.GetReturnValue().Set(info.Holder());
@@ -190,23 +251,23 @@ namespace kududown {
       return Nan::ThrowError("end() requires a callback argument");
     }
 
-    //if (!iterator->ended) {
+    if (!iterator->ended) {
       v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(info[0]);
 
       EndWorker* worker = new EndWorker(iterator, new Nan::Callback(callback));
       // persist to prevent accidental GC
       v8::Local<v8::Object> _this = info.This();
       worker->SaveToPersistent("iterator", _this);
-      //iterator->ended = true;
+      iterator->ended = true;
 
-      //if (iterator->nexting) {
+      if (iterator->nexting) {
         // waiting for a next() to return, queue the end
-      //  iterator->endWorker = worker;
-      //}
-      //else {
+        iterator->endWorker = worker;
+      }
+      else {
         Nan::AsyncQueueWorker(worker);
-      //}
-    //}
+      }
+    }
 
     info.GetReturnValue().Set(info.Holder());
   }

@@ -8,7 +8,7 @@ var db
       var d = []
         , i = 0
         , k
-      for (; i <  10000; i++) {
+      for (; i <  5000; i++) {
         k = (i < 10 ? '0' : '') + i
         d.push({
             type  : 'put'

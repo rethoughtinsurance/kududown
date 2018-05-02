@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <map>
+#include <numeric>
 
 #include "database.h"
 #include "async.h"
@@ -152,8 +153,6 @@ namespace kududown {
   Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
                             std::string& value) {
 
-    tracer::Log("Database",  LogLevel::INFO, "####GET FROM DATABASE####");
-
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
           "Not connected. Unable to perform read operation.");
@@ -172,6 +171,8 @@ namespace kududown {
         kudu::client::KuduValue::CopyString(key));
 
     scanner.AddConjunctPredicate(p);
+    tracer::Log("Database" , LogLevel::TRACE,
+                std::string("ADDED PREDICATE FOR KEY: ") + key.ToString());
 
     //scanner.KeepAlive();
     kudu::Status st = scanner.Open();
@@ -193,6 +194,10 @@ namespace kududown {
       scanner.NextBatch(&batch);
       num_rows += batch.NumRows();
 
+      char tmp[128];
+      sprintf(tmp, "%d", batch.NumRows());
+      tracer::Log("Database", LogLevel::TRACE,
+                 std::string("Got next batch with ") + tmp + " rows.");
       // TODO num_rows > 1 ??
       kudu::client::KuduSchema schema = scanner.GetProjectionSchema();
 
@@ -201,6 +206,7 @@ namespace kududown {
 
         kudu::client::KuduScanBatch::RowPtr row(*it);
 
+        tracer::Log("Database", LogLevel::TRACE, "Read row: " + row.ToString());
         // TODO fix this when we add projection fields to the schema
         // and are dealing with tables that have more than 2 columns (i.e. rtip_test)
         //for (size_t x = 0; x < schema.num_columns(); ++x) {
@@ -214,7 +220,7 @@ namespace kududown {
     if (num_rows == 0) {
       std::string msg("NotFound: " + key.ToString() + " was not found");
       kudu::Status status = kudu::Status::NotFound(msg);
-      tracer::Log("Database" , LogLevel::DEBUG, status.ToString());
+      tracer::Log("Database" , LogLevel::TRACE, status.ToString());
       //value.clear();
       return status;
     }
@@ -433,11 +439,11 @@ namespace kududown {
         kudu::Status st = row->SetString(y, colValue);
 
         if (!st.ok()) {
-          KUDU_LOG(ERROR)<< st.message();
+          tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
           //batch->Clear();
           st = session->Flush();
           if (!st.ok()) {
-            KUDU_LOG(ERROR)<< st.message();
+            tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
             session->Close();
             return st;
           }
@@ -463,6 +469,7 @@ namespace kududown {
         }
       }
 
+      tracer::Log("Database", LogLevel::TRACE, "Applying WRITE operation");
       st = session->Apply(kuduWrite);
       if (!st.ok()) {
         tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
@@ -476,6 +483,7 @@ namespace kududown {
       session->Close();
       return st;
     }
+    tracer::Log("Database" , LogLevel::DEBUG, std::string("WRITE COMPLETE"));
     session->Close();
     return kudu::Status::OK();
   }
@@ -624,15 +632,13 @@ namespace kududown {
   NAN_METHOD(Database::Close){
     LD_METHOD_SETUP_COMMON_ONEARG(close)
 
-    CloseWorker* worker = new CloseWorker(
-        database
-      , new Nan::Callback(callback)
-    );
+    CloseWorker* worker = new CloseWorker(database, new Nan::Callback(callback));
     // persist to prevent accidental GC
     v8::Local<v8::Object> _this = info.This();
     worker->SaveToPersistent("database", _this);
 
     if (!database->iterators.empty()) {
+      tracer::Log("Database::Close", LogLevel::INFO, "Database still has iterators");
       // yikes, we still have iterators open! naughty naughty.
       // we have to queue up a CloseWorker and manually close each of them.
       // the CloseWorker will be invoked once they are all cleaned up
@@ -651,25 +657,21 @@ namespace kududown {
 
         kududown::Iterator *iterator = it->second;
 
-          if (!iterator->ended) {
-            v8::Local<v8::Function> end =
-                v8::Local<v8::Function>::Cast(iterator->handle()->Get(
-                    Nan::New<v8::String>("end").ToLocalChecked()));
-            v8::Local<v8::Value> argv[] = {
-                Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
-            };
-            Nan::MakeCallback(
-                iterator->handle()
-              , end
-              , 1
-              , argv
-            );
-          }
+        if (!iterator->ended) {
+          v8::Local<v8::Function> end =
+              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
+                  Nan::New<v8::String>("end").ToLocalChecked()));
+          v8::Local<v8::Value> argv[] = {
+              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
+          };
+          Nan::MakeCallback(iterator->handle(), end, 1, argv);
+        }
       }
-    } else {
+    }
+    else {
       Nan::AsyncQueueWorker(worker);
     }
-}
+  }
 
   NAN_METHOD(Database::Put){
   LD_METHOD_SETUP_COMMON(put, 2, 3)

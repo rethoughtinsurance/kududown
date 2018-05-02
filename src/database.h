@@ -73,11 +73,14 @@ namespace kududown {
 
     kudu::client::sp::shared_ptr<kudu::client::KuduSession> openSession();
 
+    static kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
+                                         kudu::client::KuduColumnSchema::DataType type,
+                                         int index, std::string&);
   protected:
     Nan::Utf8String* location;
     kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
     kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
-    //kudu::client::sp::shared_ptr<kudu::client::KuduSession> session;
+
   private:
     Options options;
 
@@ -92,9 +95,7 @@ namespace kududown {
 
     kudu::Status connect();
     kudu::Status openTable(std::string);
-    kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
-                                 kudu::client::KuduColumnSchema::DataType type,
-                                 int index, std::string&);
+
 
     static void WriteDoing(uv_work_t *req);
     static void WriteAfter(uv_work_t *req);

@@ -60,19 +60,22 @@ private:
   std::string* gt;
   std::string* gte;
   int count;
-  size_t highWaterMark;
+
 
 public:
   bool keyAsBuffer;
   bool valueAsBuffer;
+
+  size_t highWaterMark;
   bool nexting;
   bool ended;
   AsyncWorker* endWorker;
 
 private:
-  bool Read(std::string& key, std::string& value);
 
   kudu::Status iteratorStatus;
+  kudu::client::KuduScanner* scanner;
+
   static NAN_METHOD(New);
   static NAN_METHOD(Seek);
   static NAN_METHOD(Next);
