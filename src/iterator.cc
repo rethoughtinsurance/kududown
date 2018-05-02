@@ -19,13 +19,19 @@ namespace kududown {
                      std::string* end, bool keys, bool values,
                      int limit, std::string* lt, std::string* lte,
                      std::string* gt, std::string* gte, bool fillCache,
-                     bool keyAsBuffer, bool valueAsBuffer)
-      : database(database), id(id), start(start), end(end), keys(
-          keys), values(values), limit(limit), lt(lt), lte(lte), gt(gt), gte(
-          gte), keyAsBuffer(keyAsBuffer), valueAsBuffer(
-          valueAsBuffer) {
+                     bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark)
+      : database(database), id(id), start(start), end(end),
+        keys(keys), values(values), limit(limit),
+        lt(lt), lte(lte), gt(gt), gte(gte),
+        keyAsBuffer(keyAsBuffer), valueAsBuffer(valueAsBuffer),
+        highWaterMark(highWaterMark) {
 
     Nan::HandleScope scope;
+
+    ended = false;
+    nexting = false;
+    seeking = false;
+    count = 0;
 
     options = new ReadOptions();
 
@@ -255,7 +261,7 @@ namespace kududown {
     std::string* end = NULL;
     int limit = -1;
     // default highWaterMark from Readble-streams
-    //size_t highWaterMark = 16 * 1024;
+    size_t highWaterMark = 16 * 1024;
     v8::Local<v8::Value> id = info[1];
     v8::Local<v8::Object> optionsObj;
     v8::Local<v8::Object> ltHandle;
@@ -310,10 +316,10 @@ namespace kududown {
                   Nan::New("limit").ToLocalChecked()))->Value();
       }
 
-//      if (optionsObj->Has(Nan::New("highWaterMark").ToLocalChecked())) {
-//        highWaterMark =
-//            v8::Local<v8::Integer>::Cast(optionsObj->Get(Nan::New("highWaterMark").ToLocalChecked()))->Value();
-//      }
+      if (optionsObj->Has(Nan::New("highWaterMark").ToLocalChecked())) {
+        highWaterMark =
+            v8::Local<v8::Integer>::Cast(optionsObj->Get(Nan::New("highWaterMark").ToLocalChecked()))->Value();
+      }
 
       if (optionsObj->Has(Nan::New("lt").ToLocalChecked())
           && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lt").ToLocalChecked()))
@@ -417,7 +423,7 @@ namespace kududown {
     Iterator* iterator = new Iterator(database, (uint32_t)id->Int32Value(),
                                       start, end, keys, values,
                                       limit, lt, lte, gt, gte, fillCache,
-                                      keyAsBuffer, valueAsBuffer);
+                                      keyAsBuffer, valueAsBuffer, highWaterMark);
     iterator->Wrap(info.This());
 
     info.GetReturnValue().Set(info.This());

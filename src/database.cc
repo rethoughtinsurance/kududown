@@ -7,6 +7,7 @@
 #include <node_buffer.h>
 
 #include <fstream>
+#include <map>
 
 #include "database.h"
 #include "async.h"
@@ -17,6 +18,8 @@
 #include "kududown.h"
 #include "kudu/client/stubs.h"
 #include "tracer.h"
+
+using namespace node_addon_tracer;
 
 namespace kududown {
 
@@ -72,14 +75,14 @@ namespace kududown {
 
   kudu::Status
   Database::openTable(std::string tableName) {
-    KUDU_LOG(INFO)<< "Opening table " << tableName;
+    tracer::Log("Database" , LogLevel::DEBUG, "Opening table " + tableName);
     kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName,
         &tablePtr);
     if (kuduStatus.ok()) {
-      KUDU_LOG(INFO) << "Table OK";
+      tracer::Log("Database" , LogLevel::DEBUG, "Table OK");
     }
     else {
-      KUDU_LOG(ERROR) << kuduStatus.ToString() << "Table NOT OK";
+      tracer::Log("Database" , LogLevel::DEBUG, "Table NOT OK");
     }
     this->tableStatus = kuduStatus;
     return kuduStatus;
@@ -87,17 +90,17 @@ namespace kududown {
 
   kudu::Status
   Database::connect() {
-    kudu::client::SetVerboseLogLevel(2);
+    //kudu::client::SetVerboseLogLevel(2);
 
     kudu::Status kuduStatus =
         kudu::client::KuduClientBuilder().add_master_server_addr("192.168.1.3").Build(
             &kuduClientPtr);
 
     if (kuduStatus.ok()) {
-      KUDU_LOG(INFO)<< kuduStatus.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, kuduStatus.ToString());
     }
     else {
-      KUDU_LOG(ERROR) << kuduStatus.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, kuduStatus.ToString());
     }
     return kuduStatus;
   }
@@ -111,7 +114,7 @@ namespace kududown {
           "Not connected. Unable to perform write operation.");
     }
     if (tablePtr == 0) {
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, this->tableStatus.ToString());
       return this->tableStatus;
     }
 
@@ -123,25 +126,25 @@ namespace kududown {
 
     kudu::Status st = row->SetString(0, key);
     if (!st.ok()) {
-      KUDU_LOG(ERROR)<< st.message();
+      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       //session->Close();
       return st;
     }
     st = row->SetString(1, value);
     if (!st.ok()) {
-      KUDU_LOG(ERROR)<< st.message();
+      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       //session->Close();
       return st;
     }
 
     st = session->Apply(upsert);
     if (!st.ok()) {
-      KUDU_LOG(ERROR)<< st.message();
+      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       //session->Close();
       return st;
     }
 
-    //session->Close();
+    session->Close();
     return kudu::Status::OK();
   }
 
@@ -149,16 +152,14 @@ namespace kududown {
   Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
                             std::string& value) {
 
-    node_addon_tracer::tracer::Log("Database",
-                                   node_addon_tracer::LogLevel::INFO,
-                                   "####GET FROM DATABASE####");
+    tracer::Log("Database",  LogLevel::INFO, "####GET FROM DATABASE####");
 
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
           "Not connected. Unable to perform read operation.");
     }
     if (tablePtr == 0) {
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
       return this->tableStatus;
     }
 
@@ -180,7 +181,7 @@ namespace kududown {
 
     if (!st.ok()) {
       scanner.Close();
-      KUDU_LOG(ERROR) << st.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       return st;
     }
 
@@ -212,9 +213,10 @@ namespace kududown {
     }
     if (num_rows == 0) {
       std::string msg("NotFound: " + key.ToString() + " was not found");
-      KUDU_LOG(WARNING) << msg;
+      kudu::Status status = kudu::Status::NotFound(msg);
+      tracer::Log("Database" , LogLevel::DEBUG, status.ToString());
       //value.clear();
-      return kudu::Status::NotFound(msg);
+      return status;
     }
     return kudu::Status::OK();
   }
@@ -342,10 +344,10 @@ namespace kududown {
 
     if (kuduClientPtr == 0) {
       return kudu::Status::RuntimeError(
-          "Not connected. Unable to perform write operation.");
+          "Not connected. Unable to perform delete operation.");
     }
     if (tablePtr == 0) {
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
       return this->tableStatus;
     }
 
@@ -360,7 +362,7 @@ namespace kududown {
     }
     st = session->Apply(del);
     if (!st.ok()) {
-      KUDU_LOG(ERROR)<< st.message();
+      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       session->Flush();
       if (st.message().ToString().find_first_of("key not found") != std::string::npos) {
         return kudu::Status::OK();
@@ -383,7 +385,7 @@ namespace kududown {
     }
     if (tablePtr == 0) {
       //batch->Clear();
-      KUDU_LOG(ERROR)<< tableStatus.ToString();
+      tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
       return this->tableStatus;
     }
 
@@ -394,7 +396,8 @@ namespace kududown {
 
     kudu::Status st;
 
-    KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase, num of batches: " << batch->size();
+    tracer::Log("Database" , LogLevel::DEBUG, "Executing WriteBatchToDatabase");
+
     for (size_t x = 0; x < batch->size(); ++x) {
       BatchOp* op = batch->get(x);
 
@@ -411,7 +414,7 @@ namespace kududown {
         default:
           st = session->Flush();
           if (!st.ok()) {
-            KUDU_LOG(ERROR)<< st.message();
+            tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
             session->Close();
             return st;
           }
@@ -419,14 +422,14 @@ namespace kududown {
           std::string msg("Unknown batch operation '");
           msg + op->getOp();
           msg.append("'. Batch operations must be either 'p' or 'd'.");
+          tracer::Log("Database" , LogLevel::DEBUG, std::string(msg));
           return kudu::Status::InvalidArgument(msg);
       }
 
       kudu::KuduPartialRow* row = kuduWrite->mutable_row();
 
-      for (size_t y = 0; y < op->size(); ++y) {
-        std::string& colValue = op->get(y);
-        KUDU_LOG(WARNING) << "SETTING STRING for column: " << y;
+      for (size_t y = 0; y < op->keySize(); ++y) {
+        std::string& colValue = op->getKey(y);
         kudu::Status st = row->SetString(y, colValue);
 
         if (!st.ok()) {
@@ -442,26 +445,34 @@ namespace kududown {
           return st;
         }
       }
-      KUDU_LOG(WARNING) << "APPLYING OPERATION";
+      for (size_t y = 0; y < op->valueSize(); ++y) {
+        std::string& colValue = op->getValue(y);
+        kudu::Status st = row->SetString(y, colValue);
+
+        if (!st.ok()) {
+          tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+          //batch->Clear();
+          st = session->Flush();
+          if (!st.ok()) {
+            tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+            session->Close();
+            return st;
+          }
+          session->Close();
+          return st;
+        }
+      }
 
       st = session->Apply(kuduWrite);
       if (!st.ok()) {
-        KUDU_LOG(ERROR)<< st.message();
-        //batch->Clear();
+        tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
         session->Close();
         return st;
       }
-
-//      st = session->Flush();
-//      if (!st.ok()) {
-//        KUDU_LOG(ERROR)<< st.message();
-//        session->Close();
-//        return st;
-//      }
     }
     st = session->Flush();
     if (!st.ok()) {
-      KUDU_LOG(ERROR)<< st.message();
+      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       session->Close();
       return st;
     }
@@ -605,61 +616,59 @@ namespace kududown {
   Nan::AsyncQueueWorker(worker);
 }
 
-//// for an empty callback to iterator.end()
-//NAN_METHOD(EmptyMethod) {
-//}
-//
+// for an empty callback to iterator.end()
+  NAN_METHOD(EmptyMethod) {
+}
+
+
   NAN_METHOD(Database::Close){
-  LD_METHOD_SETUP_COMMON_ONEARG(close)
+    LD_METHOD_SETUP_COMMON_ONEARG(close)
 
-  CloseWorker* worker = new CloseWorker(
-      database
+    CloseWorker* worker = new CloseWorker(
+        database
       , new Nan::Callback(callback)
-  );
-// persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
-  worker->SaveToPersistent("database", _this);
+    );
+    // persist to prevent accidental GC
+    v8::Local<v8::Object> _this = info.This();
+    worker->SaveToPersistent("database", _this);
 
-//  if (!database->iterators.empty()) {
-//    // yikes, we still have iterators open! naughty naughty.
-//    // we have to queue up a CloseWorker and manually close each of them.
-//    // the CloseWorker will be invoked once they are all cleaned up
-//    database->pendingCloseWorker = worker;
-//
-//    for (
-//        std::map< uint32_t, kududown::Iterator * >::iterator it
-//            = database->iterators.begin()
-//      ; it != database->iterators.end()
-//      ; ++it) {
-//
-//        // for each iterator still open, first check if it's already in
-//        // the process of ending (ended==true means an async End() is
-//        // in progress), if not, then we call End() with an empty callback
-//        // function and wait for it to hit ReleaseIterator() where our
-//        // CloseWorker will be invoked
-//
-//        kududown::Iterator *iterator = it->second;
-//
-//        if (!iterator->ended) {
-//          v8::Local<v8::Function> end =
-//              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
-//                  Nan::New<v8::String>("end").ToLocalChecked()));
-//          v8::Local<v8::Value> argv[] = {
-//              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
-//          };
-//          Nan::MakeCallback(
-//              iterator->handle()
-//            , end
-//            , 1
-//            , argv
-//          );
-//        }
-//    }
-//  } else {
-//    Nan::AsyncQueueWorker(worker);
-//  }
+    if (!database->iterators.empty()) {
+      // yikes, we still have iterators open! naughty naughty.
+      // we have to queue up a CloseWorker and manually close each of them.
+      // the CloseWorker will be invoked once they are all cleaned up
+      database->pendingCloseWorker = worker;
 
-  Nan::AsyncQueueWorker(worker);
+      for (std::map<uint32_t, kududown::Iterator*>::iterator it
+              = database->iterators.begin()
+        ; it != database->iterators.end()
+        ; ++it) {
+
+          // for each iterator still open, first check if it's already in
+          // the process of ending (ended==true means an async End() is
+          // in progress), if not, then we call End() with an empty callback
+          // function and wait for it to hit ReleaseIterator() where our
+          // CloseWorker will be invoked
+
+        kududown::Iterator *iterator = it->second;
+
+          if (!iterator->ended) {
+            v8::Local<v8::Function> end =
+                v8::Local<v8::Function>::Cast(iterator->handle()->Get(
+                    Nan::New<v8::String>("end").ToLocalChecked()));
+            v8::Local<v8::Value> argv[] = {
+                Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
+            };
+            Nan::MakeCallback(
+                iterator->handle()
+              , end
+              , 1
+              , argv
+            );
+          }
+      }
+    } else {
+      Nan::AsyncQueueWorker(worker);
+    }
 }
 
   NAN_METHOD(Database::Put){

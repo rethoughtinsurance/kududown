@@ -30,7 +30,7 @@ public:
   Iterator(Database* database, uint32_t id, kudu::Slice* start,
       std::string* end, bool keys, bool values, int limit,
       std::string* lt, std::string* lte, std::string* gt, std::string* gte,
-      bool fillCache, bool keyAsBuffer, bool valueAsBuffer);
+      bool fillCache, bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark);
 
   ~Iterator();
 
@@ -51,7 +51,7 @@ private:
   kudu::Slice* start;
 
   std::string* end;
-
+  bool seeking;
   bool keys;
   bool values;
   int limit;
@@ -59,11 +59,14 @@ private:
   std::string* lte;
   std::string* gt;
   std::string* gte;
+  int count;
+  size_t highWaterMark;
 
 public:
   bool keyAsBuffer;
   bool valueAsBuffer;
-
+  bool nexting;
+  bool ended;
   AsyncWorker* endWorker;
 
 private:

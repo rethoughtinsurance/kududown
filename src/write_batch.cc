@@ -1,18 +1,3 @@
-// Copyright (c) 2011 The LevelDB Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file. See the AUTHORS file for names of contributors.
-//
-// WriteBatch::rep_ :=
-//    sequence: fixed64
-//    count: fixed32
-//    data: record[count]
-// record :=
-//    kTypeValue varstring varstring         |
-//    kTypeDeletion varstring
-// varstring :=
-//    len: varint32
-//    data: uint8[len]
-
 
 #include "write_batch.h"
 
@@ -39,8 +24,13 @@ namespace kududown {
   void
   WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
     BatchOp* newOp = new BatchOp('p');
-    newOp->addValue(key.ToString());
-    newOp->addValue(value.ToString());
+    if (!key.empty()) {
+      newOp->addKey(key.ToString());
+    }
+    if (!value.empty()) {
+      newOp->addValue(value.ToString());
+    }
+
     this->ops.push_back(newOp);
   }
 
