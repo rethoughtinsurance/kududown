@@ -27,10 +27,10 @@ public:
   NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
       v8::Local<v8::Object> optionsObj);
 
-  Iterator(Database* database, uint32_t id, kudu::Slice* start,
-      std::string* end, bool keys, bool values, int limit,
+  Iterator(Database* database, uint32_t id, bool keys, bool values, int limit,
       std::string* lt, std::string* lte, std::string* gt, std::string* gte,
-      bool fillCache, bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark);
+      bool fillCache, bool keyAsBuffer, bool valueAsBuffer,
+      unsigned int highWaterMark);
 
   ~Iterator();
 
@@ -48,25 +48,26 @@ private:
   uint32_t id;
   //Iterator* dbIterator;
   ReadOptions* options;
-  kudu::Slice* start;
 
-  std::string* end;
   bool seeking;
   bool keys;
   bool values;
-  int limit;
+  bool inBatch;
+  int limit; // -1 is unlimited, otherwise this is a row limit
+
   std::string* lt;
   std::string* lte;
   std::string* gt;
   std::string* gte;
-  int count;
-
+  size_t batchRowCount;
+  size_t currentRowCount;
+  size_t totalRowCount;
 
 public:
   bool keyAsBuffer;
   bool valueAsBuffer;
 
-  size_t highWaterMark;
+  unsigned int highWaterMark;
   bool nexting;
   bool ended;
   AsyncWorker* endWorker;
@@ -75,6 +76,8 @@ private:
 
   kudu::Status iteratorStatus;
   kudu::client::KuduScanner* scanner;
+  kudu::client::KuduScanBatch* batch;
+  kudu::client::KuduSchema schema;
 
   static NAN_METHOD(New);
   static NAN_METHOD(Seek);

@@ -218,7 +218,7 @@ namespace kududown {
       }
     }
     if (num_rows == 0) {
-      std::string msg("NotFound: " + key.ToString() + " was not found");
+      std::string msg("NotFound: " + key.ToDebugString() + " was not found");
       kudu::Status status = kudu::Status::NotFound(msg);
       tracer::Log("Database" , LogLevel::TRACE, status.ToString());
       //value.clear();
@@ -370,7 +370,7 @@ namespace kududown {
     if (!st.ok()) {
       tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       session->Flush();
-      if (st.message().ToString().find_first_of("key not found") != std::string::npos) {
+      if (st.ToString().find_first_of("key not found") != std::string::npos) {
         return kudu::Status::OK();
       }
 

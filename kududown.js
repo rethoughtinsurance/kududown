@@ -6,10 +6,13 @@ const util              = require('util')
     , ChainedBatch      = require('./chained-batch')
     , Iterator          = require('./iterator')
 
-var addon = require('../../build/Release/kududown');
+var addon = null;
 
-if (addon == null) {
-  addon = require('../../build/Debug/kududown');
+try {
+  addon = require('../../build/Release/kududown');
+}
+catch(e) {
+	addon = require('../../build/Debug/kududown');
 }
 
 if (addon == null) {

@@ -18,12 +18,12 @@ namespace kududown {
 
   static Nan::Persistent<v8::FunctionTemplate> iterator_constructor;
 
-  Iterator::Iterator(Database* database, uint32_t id, kudu::Slice* start,
-                     std::string* end, bool keys, bool values,
+  Iterator::Iterator(Database* database, uint32_t id, bool keys, bool values,
                      int limit, std::string* lt, std::string* lte,
                      std::string* gt, std::string* gte, bool fillCache,
-                     bool keyAsBuffer, bool valueAsBuffer, size_t highWaterMark)
-      : database(database), id(id), start(start), end(end),
+                     bool keyAsBuffer, bool valueAsBuffer,
+                     unsigned int highWaterMark)
+      : database(database), id(id),
         keys(keys), values(values), limit(limit),
         lt(lt), lte(lte), gt(gt), gte(gte),
         keyAsBuffer(keyAsBuffer), valueAsBuffer(valueAsBuffer),
@@ -34,18 +34,25 @@ namespace kududown {
     ended = false;
     nexting = false;
     seeking = false;
-    count = 0;
+    inBatch = false;
+
+    batchRowCount = 0;
+    currentRowCount = 0;
+    totalRowCount = 0;
 
     options = new ReadOptions();
 
     endWorker = NULL;
 
     // create the Scanner
+    batch = new kudu::client::KuduScanBatch();
     scanner = 0;
     scanner = new kudu::client::KuduScanner(database->tablePtr.get());
-    scanner->SetOrderMode(kudu::client::KuduScanner::OrderMode::ORDERED);
+    scanner->SetBatchSizeBytes(0);
     scanner->KeepAlive();
     iteratorStatus = scanner->Open();
+
+    tracer::Log("Iterator", LogLevel::DEBUG, "Iterator CTOR");
 
     if (!iteratorStatus.ok()) {
       scanner->Close();
@@ -53,23 +60,20 @@ namespace kududown {
       scanner = 0;
       tracer::Log("Iterator", LogLevel::DEBUG, iteratorStatus.ToString());
     }
+    scanner->SetBatchSizeBytes(highWaterMark);
+    schema = scanner->GetProjectionSchema();
+
+    tracer::Log("Iterator", LogLevel::DEBUG, "Iterator constructed");
   }
 
   Iterator::~Iterator() {
     delete options;
-    delete scanner;
-
-    if (start != NULL) {
-      // Special case for `start` option: it won't be
-      // freed up by any of the delete calls below.
-//      if (!((lt != NULL && reverse) || (lte != NULL && reverse)
-//          || (gt != NULL && !reverse) || (gte != NULL && !reverse))) {
-//        delete[] start->data();
-//      }
-      delete start;
+    if (scanner != 0) {
+      scanner->Close();
     }
-    if (end != NULL)
-      delete end;
+    delete scanner;
+    delete batch;
+
     if (lt != NULL)
       delete lt;
     if (gt != NULL)
@@ -83,55 +87,83 @@ namespace kududown {
 
   bool
   Iterator::IteratorNext(std::vector<std::pair<std::string, std::string> >& result) {
-    // TODO don't exceed the highWaterMark
-    //size_t size = 0;
+
+    size_t size = 0;
+
     if (!iteratorStatus.ok()) {
+      tracer::Log("IteratorNext", LogLevel::WARN, iteratorStatus.ToString());
       return false;
     }
 
-    if (limit < 0 || ++count <= limit) {
-      int num_rows = 0;
-
-      kudu::client::KuduScanBatch batch;
-
-      while (scanner->HasMoreRows()) {
-        scanner->NextBatch(&batch);
-
-        if (batch.NumRows() > 0) {
-          tracer::Log("Iterator", LogLevel::DEBUG, "Reading rows from iterator");
-        }
-        num_rows += batch.NumRows();
-
-        char tmp[128];
-        sprintf(tmp, "%d", batch.NumRows());
-        tracer::Log("Database", LogLevel::TRACE,
-                    std::string("Got next batch with ") + tmp + " rows.");
-        // TODO num_rows > 1 ??
-        kudu::client::KuduSchema schema = scanner->GetProjectionSchema();
-
-        for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
-            it != batch.end(); ++it) {
-
-          kudu::client::KuduScanBatch::RowPtr row(*it);
-
-          tracer::Log("Database", LogLevel::TRACE, "Read row: " + row.ToString());
-          // TODO fix this when we add projection fields to the schema
-          // and are dealing with tables that have more than 2 columns (i.e. rtip_test)
-          //for (size_t x = 0; x < schema.num_columns(); ++x) {
-          std::string key, value;
-          kudu::Status st =
-              Database::getSliceAsString(row, schema.Column(0).type(), 0, key);
-          st =
-              Database::getSliceAsString(row, schema.Column(1).type(), 1, value);
-
-          tracer::Log("Iterator", LogLevel::TRACE, "Read key: " + key);
-          tracer::Log("Iterator", LogLevel::TRACE, "Read value: " + value);
-          result.push_back(std::make_pair(key, value));
-        }
-      }
-      return true;
+    if (limit > 0 && totalRowCount >= (size_t)limit) {
+      char tmp[128];
+      sprintf(tmp, "totalRowCount of %lu exceeds limit of %d", totalRowCount, limit);
+      tracer::Log("IteratorNext", LogLevel::WARN, tmp);
+      return false;
     }
-    return false;
+
+    if (currentRowCount >= batchRowCount) {
+      char tmp[128];
+      sprintf(tmp, "Getting more rows! totalRowCount: %lu, currentRowCount: %lu, batchRowCount: %lu",
+              totalRowCount, currentRowCount, batchRowCount);
+      tracer::Log("IteratorNext", LogLevel::WARN, tmp);
+
+      batchRowCount = 0;
+      currentRowCount = 0;
+
+      while (scanner->HasMoreRows() && batchRowCount == 0) {
+        tracer::Log("IteratorNext", LogLevel::DEBUG, "scanner has more rows");
+        iteratorStatus = scanner->NextBatch(batch);
+
+        if (!iteratorStatus.ok()) {
+          tracer::Log("IteratorNext", LogLevel::DEBUG, iteratorStatus.ToString());
+          scanner->Close();
+          return false;
+        }
+
+        batchRowCount = batch->NumRows();
+        totalRowCount += batchRowCount;
+        char tmp[128];
+        sprintf(tmp, "Reading %lu rows from iterator", batchRowCount);
+        tracer::Log("Iterator", LogLevel::DEBUG, tmp);
+      }
+      if (batchRowCount == 0) {
+        // nothing left to read
+        return false;
+      }
+    }
+
+    // we have a batch that we are processing
+
+    // while we haven't hit the highWaterMark or run out of rows
+    while (size < highWaterMark && currentRowCount < batchRowCount) {
+      char tmp[128];
+      sprintf(tmp, "size is %lu, currentRowCount: %lu, batchRowCount: %lu",
+              size, currentRowCount, batchRowCount);
+      tracer::Log("IteratorNext", LogLevel::DEBUG, tmp);
+      kudu::client::KuduScanBatch::RowPtr row(batch->Row(currentRowCount++));
+      std::string key, value;
+
+      iteratorStatus = Database::getSliceAsString(row, schema.Column(0).type(), 0, key);
+      if (!iteratorStatus.ok()) {
+        tracer::Log("Iterator", LogLevel::ERROR, iteratorStatus.ToString());
+        return false;
+      }
+      iteratorStatus = Database::getSliceAsString(row, schema.Column(1).type(), 1, value);
+      if (!iteratorStatus.ok()) {
+        tracer::Log("Iterator", LogLevel::ERROR, iteratorStatus.ToString());
+        return false;
+      }
+      tracer::Log("Iterator", LogLevel::TRACE, "Read key: " + key);
+      tracer::Log("Iterator", LogLevel::TRACE, "Read value: " + value);
+      size += key.size() + value.size();
+      result.push_back(std::make_pair(key, value));
+    }
+    char tmp[128];
+    sprintf(tmp, "Total rows read so far: %lu", totalRowCount);
+    tracer::Log("Iterator", LogLevel::DEBUG, tmp);
+
+    return true;
   }
 
   kudu::Status
@@ -318,8 +350,6 @@ namespace kududown {
 
     Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
 
-    kudu::Slice* start = NULL;
-    std::string* end = NULL;
     int limit = -1;
     // default highWaterMark from Readble-streams
     size_t highWaterMark = 16 * 1024;
@@ -330,47 +360,13 @@ namespace kududown {
     v8::Local<v8::Object> gtHandle;
     v8::Local<v8::Object> gteHandle;
 
-    char *startStr = NULL;
     std::string* lt = NULL;
     std::string* lte = NULL;
     std::string* gt = NULL;
     std::string* gte = NULL;
 
-    //default to forward.
-    bool reverse = false;
-
     if (info.Length() > 1 && info[2]->IsObject()) {
       optionsObj = v8::Local<v8::Object>::Cast(info[2]);
-
-      reverse = BooleanOptionValue(optionsObj, "reverse");
-
-      if (optionsObj->Has(Nan::New("start").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
-              || optionsObj->Get(Nan::New("start").ToLocalChecked())->IsString())) {
-
-        v8::Local<v8::Value> startBuffer = optionsObj->Get(Nan::New("start").ToLocalChecked());
-
-        // ignore start if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(startBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
-          start = new kudu::Slice(_startCh_, _startSz_);
-          startStr = _startCh_;
-        }
-      }
-
-      if (optionsObj->Has(Nan::New("end").ToLocalChecked())
-          && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("end").ToLocalChecked()))
-              || optionsObj->Get(Nan::New("end").ToLocalChecked())->IsString())) {
-
-        v8::Local<v8::Value> endBuffer = optionsObj->Get(Nan::New("end").ToLocalChecked());
-
-        // ignore end if it has size 0 since a Slice can't have length 0
-        if (StringOrBufferLength(endBuffer) > 0) {
-          LD_STRING_OR_BUFFER_TO_COPY(_end, endBuffer, end)
-          end = new std::string(_endCh_, _endSz_);
-          delete[] _endCh_;
-        }
-      }
 
       if (!optionsObj.IsEmpty() && optionsObj->Has(Nan::New("limit").ToLocalChecked())) {
         limit = v8::Local<v8::Integer>::Cast(optionsObj->Get(
@@ -388,20 +384,10 @@ namespace kududown {
 
         v8::Local<v8::Value> ltBuffer = optionsObj->Get(Nan::New("lt").ToLocalChecked());
 
-        // ignore end if it has size 0 since a Slice can't have length 0
         if (StringOrBufferLength(ltBuffer) > 0) {
           LD_STRING_OR_BUFFER_TO_COPY(_lt, ltBuffer, lt)
           lt = new std::string(_ltCh_, _ltSz_);
           delete[] _ltCh_;
-          if (reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(lt->data(), lt->size());
-          }
         }
       }
 
@@ -416,15 +402,6 @@ namespace kududown {
           LD_STRING_OR_BUFFER_TO_COPY(_lte, lteBuffer, lte)
           lte = new std::string(_lteCh_, _lteSz_);
           delete[] _lteCh_;
-          if (reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(lte->data(), lte->size());
-          }
         }
       }
 
@@ -439,15 +416,6 @@ namespace kududown {
           LD_STRING_OR_BUFFER_TO_COPY(_gt, gtBuffer, gt)
           gt = new std::string(_gtCh_, _gtSz_);
           delete[] _gtCh_;
-          if (!reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(gt->data(), gt->size());
-          }
         }
       }
 
@@ -462,15 +430,6 @@ namespace kududown {
           LD_STRING_OR_BUFFER_TO_COPY(_gte, gteBuffer, gte)
           gte = new std::string(_gteCh_, _gteSz_);
           delete[] _gteCh_;
-          if (!reverse) {
-            if (startStr != NULL) {
-              delete[] startStr;
-              startStr = NULL;
-            }
-            if (start != NULL)
-              delete start;
-            start = new kudu::Slice(gte->data(), gte->size());
-          }
         }
       }
     }
@@ -482,7 +441,7 @@ namespace kududown {
     bool fillCache = BooleanOptionValue(optionsObj, "fillCache");
 
     Iterator* iterator = new Iterator(database, (uint32_t)id->Int32Value(),
-                                      start, end, keys, values,
+                                      keys, values,
                                       limit, lt, lte, gt, gte, fillCache,
                                       keyAsBuffer, valueAsBuffer, highWaterMark);
     iterator->Wrap(info.This());
