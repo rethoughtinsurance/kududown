@@ -3,10 +3,10 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_COMMON_H
-#define LD_COMMON_H
+#ifndef KD_COMMON_H
+#define KD_COMMON_H
 
-#include <nan.h>
+#include <napi.h>
 
 namespace kududown {
 

@@ -3,8 +3,7 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include <fstream>
 #include <map>
@@ -18,9 +17,10 @@
 #include "common.h"
 #include "kududown.h"
 #include "kudu/client/stubs.h"
-#include "tracer.h"
+//#include "tracer.h"
 
-using namespace node_addon_tracer;
+//using namespace node_addon_tracer;
+using namespace kudu;
 
 namespace kududown {
 
@@ -44,26 +44,26 @@ namespace kududown {
 
   /* Calls from worker threads, NO V8 HERE *****************************/
 
-  kudu::client::sp::shared_ptr<kudu::client::KuduSession>
+  client::sp::shared_ptr<client::KuduSession>
   Database::openSession() {
     return kuduClientPtr->NewSession();
   }
 
-  kudu::Status
+  Status
   Database::OpenDatabase(Options* opts) {
     if (!opts) {
-      return kudu::Status::InvalidArgument("Options cannot be empty");
+      return Status::InvalidArgument("Options cannot be empty");
     }
     this->options = *opts;
 
-    kudu::Status kuduStatus = connect();
+    Status kuduStatus = connect();
 
     if (kuduStatus.ok()) {
       if (opts->tableName.size() > 0) {
         kuduStatus = openTable(opts->tableName);
       }
       else {
-        //throw kudu::Status::InvalidArgument("A table name must be supplied");
+        //throw Status::InvalidArgument("A table name must be supplied");
         kuduStatus = openTable("impala::rtip.rtip_test");
       }
     }
@@ -74,114 +74,114 @@ namespace kududown {
     return kuduStatus;
   }
 
-  kudu::Status
+  Status
   Database::openTable(std::string tableName) {
-    tracer::Log("Database" , LogLevel::DEBUG, "Opening table " + tableName);
-    kudu::Status kuduStatus = kuduClientPtr->OpenTable(tableName,
+    //tracer::Log("Database" , LogLevel::DEBUG, "Opening table " + tableName);
+    Status kuduStatus = kuduClientPtr->OpenTable(tableName,
         &tablePtr);
     if (kuduStatus.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, "Table OK");
+      //tracer::Log("Database" , LogLevel::DEBUG, "Table OK");
     }
     else {
-      tracer::Log("Database" , LogLevel::DEBUG, "Table NOT OK");
+      //tracer::Log("Database" , LogLevel::DEBUG, "Table NOT OK");
     }
     this->tableStatus = kuduStatus;
     return kuduStatus;
   }
 
-  kudu::Status
+  Status
   Database::connect() {
-    //kudu::client::SetVerboseLogLevel(2);
+    //client::SetVerboseLogLevel(2);
 
-    kudu::Status kuduStatus =
-        kudu::client::KuduClientBuilder().add_master_server_addr("192.168.1.3").Build(
+    Status kuduStatus =
+        client::KuduClientBuilder().add_master_server_addr("192.168.1.3").Build(
             &kuduClientPtr);
 
     if (kuduStatus.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, kuduStatus.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, kuduStatus.ToString());
     }
     else {
-      tracer::Log("Database" , LogLevel::DEBUG, kuduStatus.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, kuduStatus.ToString());
     }
     return kuduStatus;
   }
 
-  kudu::Status
-  Database::PutToDatabase(WriteOptions* options, kudu::Slice key,
-                          kudu::Slice value) {
+  Status
+  Database::PutToDatabase(WriteOptions* options, Slice key,
+                          Slice value) {
 
     if (kuduClientPtr == 0) {
-      return kudu::Status::RuntimeError(
+      return Status::RuntimeError(
           "Not connected. Unable to perform write operation.");
     }
     if (tablePtr == 0) {
-      tracer::Log("Database" , LogLevel::DEBUG, this->tableStatus.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, this->tableStatus.ToString());
       return this->tableStatus;
     }
 
     // open a session
-    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
+    client::sp::shared_ptr<client::KuduSession> session =
         kuduClientPtr->NewSession();
-    kudu::client::KuduUpsert* upsert = tablePtr->NewUpsert();
-    kudu::KuduPartialRow* row = upsert->mutable_row();
+    client::KuduUpsert* upsert = tablePtr->NewUpsert();
+    KuduPartialRow* row = upsert->mutable_row();
 
-    kudu::Status st = row->SetString(0, key);
+    Status st = row->SetString(0, key);
     if (!st.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       //session->Close();
       return st;
     }
     st = row->SetString(1, value);
     if (!st.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       //session->Close();
       return st;
     }
 
     st = session->Apply(upsert);
     if (!st.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       //session->Close();
       return st;
     }
 
     session->Close();
-    return kudu::Status::OK();
+    return Status::OK();
   }
 
-  kudu::Status
-  Database::GetFromDatabase(ReadOptions* options, kudu::Slice key,
+  Status
+  Database::GetFromDatabase(ReadOptions* options, Slice key,
                             std::string& value) {
 
     if (kuduClientPtr == 0) {
-      return kudu::Status::RuntimeError(
+      return Status::RuntimeError(
           "Not connected. Unable to perform read operation.");
     }
     if (tablePtr == 0) {
-      tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
       return this->tableStatus;
     }
 
-    kudu::client::KuduScanner scanner(tablePtr.get());
+    client::KuduScanner scanner(tablePtr.get());
 
     // make a predicate for <tableName>.key column and get a value
     // equal to the passed in key
 
     // TODO: make key name(s) based on schema
-    // kudu::Schema schema = tablePtr->schema();
-    kudu::client::KuduPredicate* p = tablePtr->NewComparisonPredicate(
-        "key", kudu::client::KuduPredicate::ComparisonOp::EQUAL,
-        kudu::client::KuduValue::CopyString(key));
+    // Schema schema = tablePtr->schema();
+    client::KuduPredicate* p = tablePtr->NewComparisonPredicate(
+        "key", client::KuduPredicate::ComparisonOp::EQUAL,
+        client::KuduValue::CopyString(key));
 
-    kudu::Status st = scanner.AddConjunctPredicate(p);
+    Status st = scanner.AddConjunctPredicate(p);
     if (!st.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG,
-                      std::string("FAILED TO ADD PREDICATE FOR KEY: ") + key.ToDebugString());
-      tracer::Log("Database", LogLevel::DEBUG, std::string(st.ToString()));
+//      tracer::Log("Database" , LogLevel::DEBUG,
+//                      std::string("FAILED TO ADD PREDICATE FOR KEY: ") + key.ToDebugString());
+//      tracer::Log("Database", LogLevel::DEBUG, std::string(st.ToString()));
     }
     else {
-      tracer::Log("Database" , LogLevel::DEBUG,
-                std::string("ADDED PREDICATE FOR KEY: ") + key.ToDebugString());
+//      tracer::Log("Database" , LogLevel::DEBUG,
+//                std::string("ADDED PREDICATE FOR KEY: ") + key.ToDebugString());
     }
     //scanner.KeepAlive();
     st = scanner.Open();
@@ -190,36 +190,36 @@ namespace kududown {
       std::string msg("Unable to get table scanner: ");
       msg.append(st.ToString());
       scanner.Close();
-      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       return st;
     }
 
-    kudu::client::KuduScanBatch batch;
+    client::KuduScanBatch batch;
 
     int num_rows = 0;
-    tracer::Log("Database::GetFromDatabase", LogLevel::DEBUG, std::string("Starting SCAN."));
+    //tracer::Log("Database::GetFromDatabase", LogLevel::DEBUG, std::string("Starting SCAN."));
     while (scanner.HasMoreRows()) {
       scanner.NextBatch(&batch);
       num_rows += batch.NumRows();
 
       char tmp[128];
       sprintf(tmp, "%d", batch.NumRows());
-      tracer::Log("Database", LogLevel::TRACE,
+      //tracer::Log("Database", LogLevel::TRACE,
                  std::string("Got next batch with ") + tmp + " rows.");
       // TODO num_rows > 1 ??
-      kudu::client::KuduSchema schema = scanner.GetProjectionSchema();
+      client::KuduSchema schema = scanner.GetProjectionSchema();
 
-      for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
+      for (client::KuduScanBatch::const_iterator it = batch.begin();
           it != batch.end(); ++it) {
 
-        kudu::client::KuduScanBatch::RowPtr row(*it);
+        client::KuduScanBatch::RowPtr row(*it);
 
-        tracer::Log("Database", LogLevel::TRACE, "Read row: " + row.ToString());
+        //tracer::Log("Database", LogLevel::TRACE, "Read row: " + row.ToString());
         // TODO fix this when we add projection fields to the schema
         // and are dealing with tables that have more than 2 columns (i.e. rtip_test)
         //for (size_t x = 0; x < schema.num_columns(); ++x) {
           std::string str;
-          kudu::Status st =
+          Status st =
               getSliceAsString(row, schema.Column(1).type(), 1, str);
           value = str;
         //}
@@ -227,43 +227,43 @@ namespace kududown {
     }
     if (num_rows == 0) {
       std::string msg("NotFound: " + key.ToDebugString() + " was not found");
-      kudu::Status status = kudu::Status::NotFound(msg);
-      tracer::Log("Database" , LogLevel::DEBUG, status.ToString());
+      Status status = Status::NotFound(msg);
+      //tracer::Log("Database" , LogLevel::DEBUG, status.ToString());
       //value.clear();
       return status;
     }
-    return kudu::Status::OK();
+    return Status::OK();
   }
 
 
-  kudu::Status
-  Database::getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
-                             kudu::client::KuduColumnSchema::DataType type,
+  Status
+  Database::getSliceAsString(client::KuduScanBatch::RowPtr row,
+                             client::KuduColumnSchema::DataType type,
                              int index, std::string &output) {
 
-    kudu::Slice slice;
+    Slice slice;
 
     switch (type) {
-      case kudu::client::KuduColumnSchema::DataType::BINARY: {
-        kudu::Status st = row.GetBinary(index, &slice);
+      case client::KuduColumnSchema::DataType::BINARY: {
+        Status st = row.GetBinary(index, &slice);
         if (!st.ok()) {
           return st;
         }
         output = slice.ToString();
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::BOOL: {
+      case client::KuduColumnSchema::DataType::BOOL: {
         bool b;
-        kudu::Status st = row.GetBool(index, &b);
+        Status st = row.GetBool(index, &b);
         if (!st.ok()) {
           return st;
         }
         output = b == true ? "true" : "false";
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::DOUBLE: {
+      case client::KuduColumnSchema::DataType::DOUBLE: {
         double d;
-        kudu::Status st = row.GetDouble(index, &d);
+        Status st = row.GetDouble(index, &d);
         if (!st.ok()) {
           return st;
         }
@@ -272,9 +272,9 @@ namespace kududown {
         output = tmp;
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::FLOAT: {
+      case client::KuduColumnSchema::DataType::FLOAT: {
         float flt;
-        kudu::Status st = row.GetFloat(index, &flt);
+        Status st = row.GetFloat(index, &flt);
         if (!st.ok()) {
           return st;
         }
@@ -283,9 +283,9 @@ namespace kududown {
         output = tmp;
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::INT16: {
+      case client::KuduColumnSchema::DataType::INT16: {
         short int i;
-        kudu::Status st = row.GetInt16(index, &i);
+        Status st = row.GetInt16(index, &i);
         if (!st.ok()) {
           return st;
         }
@@ -294,9 +294,9 @@ namespace kududown {
         output = tmp;
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::INT32: {
+      case client::KuduColumnSchema::DataType::INT32: {
         int32_t i32;
-        kudu::Status st = row.GetInt32(index, &i32);
+        Status st = row.GetInt32(index, &i32);
         if (!st.ok()) {
           return st;
         }
@@ -305,9 +305,9 @@ namespace kududown {
         output = tmp;
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::INT64: {
+      case client::KuduColumnSchema::DataType::INT64: {
         int64_t bigint;
-        kudu::Status st = row.GetInt64(index, &bigint);
+        Status st = row.GetInt64(index, &bigint);
         if (!st.ok()) {
           return st;
         }
@@ -316,9 +316,9 @@ namespace kududown {
         output = tmp;
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::INT8: {
+      case client::KuduColumnSchema::DataType::INT8: {
         signed char i;
-        kudu::Status st = row.GetInt8(index, &i);
+        Status st = row.GetInt8(index, &i);
         if (!st.ok()) {
           return st;
         }
@@ -327,18 +327,18 @@ namespace kududown {
         output = tmp;
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::STRING: {
-        kudu::Status st = row.GetString(index, &slice);
+      case client::KuduColumnSchema::DataType::STRING: {
+        Status st = row.GetString(index, &slice);
         if (!st.ok()) {
           return st;
         }
         output = slice.ToString();
         return st;
       }
-      case kudu::client::KuduColumnSchema::DataType::UNIXTIME_MICROS: {
+      case client::KuduColumnSchema::DataType::UNIXTIME_MICROS: {
         int64_t theTime;
 
-        kudu::Status st = row.GetUnixTimeMicros(index, &theTime);
+        Status st = row.GetUnixTimeMicros(index, &theTime);
         if (!st.ok()) {
           return st;
         }
@@ -348,74 +348,74 @@ namespace kududown {
         return st;
       }
       default:
-        return kudu::Status::NotFound("No conversion for datatype "
-            + kudu::client::KuduColumnSchema::DataTypeToString(type));
+        return Status::NotFound("No conversion for datatype "
+            + client::KuduColumnSchema::DataTypeToString(type));
     }
   }
 
-  kudu::Status
-  Database::DeleteFromDatabase(WriteOptions* options, kudu::Slice key) {
+  Status
+  Database::DeleteFromDatabase(WriteOptions* options, Slice key) {
 
     if (kuduClientPtr == 0) {
-      return kudu::Status::RuntimeError(
+      return Status::RuntimeError(
           "Not connected. Unable to perform delete operation.");
     }
     if (tablePtr == 0) {
-      tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
       return this->tableStatus;
     }
 
-    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
+    client::sp::shared_ptr<client::KuduSession> session =
             kuduClientPtr->NewSession();
 
-    kudu::client::KuduDelete* del = tablePtr->NewDelete();
-    kudu::KuduPartialRow* row = del->mutable_row();
-    kudu::Status st = row->SetString(0, key);
+    client::KuduDelete* del = tablePtr->NewDelete();
+    KuduPartialRow* row = del->mutable_row();
+    Status st = row->SetString(0, key);
     if (!st.ok()) {
       return st;
     }
     st = session->Apply(del);
     if (!st.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       session->Flush();
       if (st.ToString().find_first_of("key not found") != std::string::npos) {
-        return kudu::Status::OK();
+        return Status::OK();
       }
 
       return st;
     }
 
     session->Flush();
-    return kudu::Status::OK();
+    return Status::OK();
   }
 
-  kudu::Status
+  Status
   Database::WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch) {
 
     if (kuduClientPtr == 0) {
       //batch->Clear();
-      return kudu::Status::RuntimeError(
+      return Status::RuntimeError(
           "Not connected. Unable to perform write batch operation.");
     }
     if (tablePtr == 0) {
       //batch->Clear();
-      tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, tableStatus.ToString());
       return this->tableStatus;
     }
 
     // open a session
-    kudu::client::sp::shared_ptr<kudu::client::KuduSession> session =
+    client::sp::shared_ptr<client::KuduSession> session =
         kuduClientPtr->NewSession();
-    session->SetFlushMode(kudu::client::KuduSession::MANUAL_FLUSH);
+    session->SetFlushMode(client::KuduSession::MANUAL_FLUSH);
 
-    kudu::Status st;
+    Status st;
 
-    tracer::Log("Database" , LogLevel::DEBUG, "Executing WriteBatchToDatabase");
+    //tracer::Log("Database" , LogLevel::DEBUG, "Executing WriteBatchToDatabase");
 
     for (size_t x = 0; x < batch->size(); ++x) {
       BatchOp* op = batch->get(x);
 
-      kudu::client::KuduWriteOperation* kuduWrite;
+      client::KuduWriteOperation* kuduWrite;
       switch (op->getOp()) {
         case 'p':
           //KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewUpsert";
@@ -428,7 +428,7 @@ namespace kududown {
         default:
           st = session->Flush();
           if (!st.ok()) {
-            tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+            //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
             session->Close();
             return st;
           }
@@ -436,22 +436,22 @@ namespace kududown {
           std::string msg("Unknown batch operation '");
           msg + op->getOp();
           msg.append("'. Batch operations must be either 'p' or 'd'.");
-          tracer::Log("Database" , LogLevel::DEBUG, std::string(msg));
-          return kudu::Status::InvalidArgument(msg);
+          //tracer::Log("Database" , LogLevel::DEBUG, std::string(msg));
+          return Status::InvalidArgument(msg);
       }
 
-      kudu::KuduPartialRow* row = kuduWrite->mutable_row();
+      KuduPartialRow* row = kuduWrite->mutable_row();
 
       for (size_t y = 0; y < op->keySize(); ++y) {
         std::string& colValue = op->getKey(y);
-        kudu::Status st = row->SetString(y, colValue);
+        Status st = row->SetString(y, colValue);
 
         if (!st.ok()) {
-          tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+          //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
           //batch->Clear();
           st = session->Flush();
           if (!st.ok()) {
-            tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+            //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
             session->Close();
             return st;
           }
@@ -461,14 +461,14 @@ namespace kududown {
       }
       for (size_t y = 0; y < op->valueSize(); ++y) {
         std::string& colValue = op->getValue(y);
-        kudu::Status st = row->SetString(y, colValue);
+        Status st = row->SetString(y, colValue);
 
         if (!st.ok()) {
-          tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+          //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
           //batch->Clear();
           st = session->Flush();
           if (!st.ok()) {
-            tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+            //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
             session->Close();
             return st;
           }
@@ -477,23 +477,23 @@ namespace kududown {
         }
       }
 
-      tracer::Log("Database", LogLevel::TRACE, "Applying WRITE operation");
+      //tracer::Log("Database", LogLevel::TRACE, "Applying WRITE operation");
       st = session->Apply(kuduWrite);
       if (!st.ok()) {
-        tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+        //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
         session->Close();
         return st;
       }
     }
     st = session->Flush();
     if (!st.ok()) {
-      tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
+      //tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       session->Close();
       return st;
     }
-    tracer::Log("Database" , LogLevel::DEBUG, std::string("WRITE COMPLETE"));
+    //tracer::Log("Database" , LogLevel::DEBUG, std::string("WRITE COMPLETE"));
     session->Close();
-    return kudu::Status::OK();
+    return Status::OK();
   }
 
   uint64_t
@@ -502,14 +502,14 @@ namespace kududown {
   }
 
   void
-  Database::CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end) {
+  Database::CompactRangeFromDatabase(const Slice* start, const Slice* end) {
     //db->CompactRange(start, end);
   }
 
   void
-  Database::GetPropertyFromDatabase(const kudu::Slice& property,
+  Database::GetPropertyFromDatabase(const Slice& property,
    std::string* value) {
-    *value = kudu::Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
+    *value = Status::NotSupported("GetPropertyFromDatabase is not supported").ToString();
   }
 
   void
@@ -646,7 +646,7 @@ namespace kududown {
     worker->SaveToPersistent("database", _this);
 
     if (!database->iterators.empty()) {
-      tracer::Log("Database::Close", LogLevel::INFO, "Database still has iterators");
+      //tracer::Log("Database::Close", LogLevel::INFO, "Database still has iterators");
       // yikes, we still have iterators open! naughty naughty.
       // we have to queue up a CloseWorker and manually close each of them.
       // the CloseWorker will be invoked once they are all cleaned up

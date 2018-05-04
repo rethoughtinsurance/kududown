@@ -1,11 +1,13 @@
-#ifndef LD_BATCH_H
-#define LD_BATCH_H
+#ifndef KD_BATCH_H
+#define KD_BATCH_H
 
 #include <vector>
-#include <node.h>
+#include <napi.h>
 
 #include "database.h"
 #include "write_batch.h"
+
+using namespace kudu;
 
 namespace kududown {
 
@@ -19,7 +21,7 @@ namespace kududown {
     Batch(kududown::Database* database, bool sync);
     ~Batch();
 
-    kudu::Status WriteIt();
+    Status WriteIt();
 
   private:
     kududown::Database* database;

@@ -1,10 +1,10 @@
-#include <node.h>
-#include <node_buffer.h>
-#include <nan.h>
+#include <napi.h>
 
 #include "batch.h"
 #include "batch_async.h"
 #include "common.h"
+
+using namespace kudu;
 
 namespace kududown {
 
@@ -22,7 +22,7 @@ namespace kududown {
       delete batch;
   }
 
-  kudu::Status
+  Status
   Batch::WriteIt() {
     return database->WriteBatchToDatabase(options, batch);
   }

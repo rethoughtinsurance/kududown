@@ -3,13 +3,14 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include "database.h"
 #include "async.h"
 #include "database_async.h"
 #include "kududown.h"
+
+using namespace kudu;
 
 namespace kududown {
 
@@ -73,7 +74,7 @@ namespace kududown {
   /** IO WORKER (abstract) **/
 
   IOWorker::IOWorker(Database *database, Nan::Callback *callback,
-                     kudu::Slice key, v8::Local<v8::Object> &keyHandle)
+                     Slice key, v8::Local<v8::Object> &keyHandle)
       : AsyncWorker(database, callback), key(key) {
     Nan::HandleScope scope;
 
@@ -94,7 +95,7 @@ namespace kududown {
   /** READ WORKER **/
 
   ReadWorker::ReadWorker(Database *database, Nan::Callback *callback,
-                         kudu::Slice key, bool asBuffer, bool fillCache,
+                         Slice key, bool asBuffer, bool fillCache,
                          v8::Local<v8::Object> &keyHandle)
       : IOWorker(database, callback, key, keyHandle), asBuffer(asBuffer) {
     Nan::HandleScope scope;
@@ -137,7 +138,7 @@ namespace kududown {
   /** DELETE WORKER **/
 
   DeleteWorker::DeleteWorker(Database *database, Nan::Callback *callback,
-                             kudu::Slice key, bool sync,
+                             Slice key, bool sync,
                              v8::Local<v8::Object> &keyHandle)
       : IOWorker(database, callback, key, keyHandle) {
     Nan::HandleScope scope;
@@ -160,7 +161,7 @@ namespace kududown {
   /** WRITE WORKER **/
 
   WriteWorker::WriteWorker(Database *database, Nan::Callback *callback,
-                           kudu::Slice key, kudu::Slice value, bool sync,
+                           Slice key, Slice value, bool sync,
                            v8::Local<v8::Object> &keyHandle,
                            v8::Local<v8::Object> &valueHandle)
       : DeleteWorker(database, callback, key, sync, keyHandle), value(value) {
@@ -208,8 +209,8 @@ namespace kududown {
   /** APPROXIMATE SIZE WORKER **/
 
   ApproximateSizeWorker::ApproximateSizeWorker(
-      Database *database, Nan::Callback *callback, kudu::Slice start,
-      kudu::Slice end, v8::Local<v8::Object> &startHandle,
+      Database *database, Nan::Callback *callback, Slice start,
+      Slice end, v8::Local<v8::Object> &startHandle,
       v8::Local<v8::Object> &endHandle)
       : AsyncWorker(database, callback), size(0) { // , range(start, end) {
     Nan::HandleScope scope;
@@ -249,8 +250,8 @@ namespace kududown {
 
   CompactRangeWorker::CompactRangeWorker(Database *database,
                                          Nan::Callback *callback,
-                                         kudu::Slice start,
-                                         kudu::Slice end,
+                                         Slice start,
+                                         Slice end,
                                          v8::Local<v8::Object> &startHandle,
                                          v8::Local<v8::Object> &endHandle)
       : AsyncWorker(database, callback) {

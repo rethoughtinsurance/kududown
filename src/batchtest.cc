@@ -1,16 +1,17 @@
 #include "write_batch.h"
 
+using namespace kudu;
 using namespace kududown;
 
 int main(int argc, char** args) {
 
   WriteBatch wb;
 
-  wb.Put(kudu::Slice("hello"), kudu::Slice("world!"));
-  wb.Put(kudu::Slice("hello2"), kudu::Slice("world!"));
-  wb.Put(kudu::Slice("hello3"), kudu::Slice("world!"));
-  wb.Put(kudu::Slice("hello4"), kudu::Slice("world!"));
-  wb.Delete(kudu::Slice("hello"));
+  wb.Put(Slice("hello"), Slice("world!"));
+  wb.Put(Slice("hello2"), Slice("world!"));
+  wb.Put(Slice("hello3"), Slice("world!"));
+  wb.Put(Slice("hello4"), Slice("world!"));
+  wb.Delete(Slice("hello"));
 
   std::cout << wb.size() << std::endl;
 

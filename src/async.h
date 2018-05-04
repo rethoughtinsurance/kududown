@@ -3,36 +3,36 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_ASYNC_H
-#define LD_ASYNC_H
+#ifndef KD_ASYNC_H
+#define KD_ASYNC_H
 
-#include <node.h>
-#include <nan.h>
+#include <napi.h>
 
+using namespace kudu;
 
 namespace kududown {
 
 class Database;
 
 /* abstract */
-class AsyncWorker: public Nan::AsyncWorker {
+class AsyncWorker {
 
 public:
-  AsyncWorker(Database* database, Nan::Callback *callback) :
-      Nan::AsyncWorker(callback), database(database) {
+  AsyncWorker(Database* database, napi_async_execute_callback callback)
+  {
   }
 
 protected:
-  void SetStatus(kudu::Status status) {
-    this->status = status;
-    if (!status.ok())
-      SetErrorMessage(status.ToString().c_str());
+  void SetStatus(Status status) {
+    //this->status = status;
+    //if (!status.ok())
+      //SetErrorMessage(status.ToString().c_str());
   }
 
-  Database* database;
+  //Database* database;
 
 private:
-  kudu::Status status;
+  //Status status;
 };
 
 } // namespace kududown

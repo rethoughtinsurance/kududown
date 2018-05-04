@@ -3,7 +3,7 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
+#include <napi.h>
 
 #include "database.h"
 #include "iterator.h"
@@ -11,7 +11,7 @@
 #include "kududown.h"
 #include "kududown_async.h"
 
-#include "tracer.h"
+//#include "tracer.h"
 
 namespace kududown {
 
@@ -72,7 +72,7 @@ void Init(v8::Local<v8::Object> target) {
 
   target->Set(Nan::New("kududown").ToLocalChecked(), kududown);
 
-  node_addon_tracer::tracer::Init(target);
+  //node_addon_tracer::tracer::Init(target);
 }
 
 NODE_MODULE(kududown, Init)

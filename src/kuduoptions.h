@@ -1,5 +1,5 @@
-#ifndef __kudu_options_h__
-#define __kudu_options_h__
+#ifndef KD_OPTIONS_H__
+#define KD_OPTIONS_H__
 
 #include <string>
 

@@ -3,13 +3,12 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef _DATABASE_H__
-#define _DATABASE_H__
+#ifndef KD_DATABASE_H__
+#define KD_DATABASE_H__
 
 #include <map>
 #include <vector>
-#include <node.h>
-#include <nan.h>
+#include <napi.h>
 
 #include <client/client.h>
 
@@ -18,6 +17,8 @@
 #include "write_batch.h"
 #include "iterator.h"
 
+using namespace kudu;
+
 namespace kududown {
 
   NAN_METHOD(KuduDOWN);
@@ -25,9 +26,9 @@ namespace kududown {
   struct Reference
   {
     Nan::Persistent<v8::Object> handle;
-    kudu::Slice slice;
+    Slice slice;
 
-    Reference(v8::Local<v8::Value> obj, kudu::Slice slice)
+    Reference(v8::Local<v8::Value> obj, Slice slice)
         : slice(slice) {
       v8::Local<v8::Object> _obj = Nan::New<v8::Object>();
       _obj->Set(Nan::New("obj").ToLocalChecked(), obj);
@@ -58,33 +59,33 @@ namespace kududown {
     Database(const v8::Local<v8::Value>& from);
     ~Database();
 
-    kudu::Status OpenDatabase(Options* options);
-    kudu::Status PutToDatabase(WriteOptions* options, kudu::Slice key, kudu::Slice value);
-    kudu::Status GetFromDatabase(ReadOptions* options, kudu::Slice key, std::string& value);
-    kudu::Status DeleteFromDatabase(WriteOptions* options, kudu::Slice key);
-    kudu::Status WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
+    Status OpenDatabase(Options* options);
+    Status PutToDatabase(WriteOptions* options, Slice key, Slice value);
+    Status GetFromDatabase(ReadOptions* options, Slice key, std::string& value);
+    Status DeleteFromDatabase(WriteOptions* options, Slice key);
+    Status WriteBatchToDatabase(WriteOptions* options, WriteBatch* batch);
     uint64_t     ApproximateSizeFromDatabase(const void* range);
 
-    void    CompactRangeFromDatabase(const kudu::Slice* start, const kudu::Slice* end);
-    void    GetPropertyFromDatabase(const kudu::Slice& property, std::string* value);
+    void    CompactRangeFromDatabase(const Slice* start, const Slice* end);
+    void    GetPropertyFromDatabase(const Slice& property, std::string* value);
 
     void CloseDatabase();
     void ReleaseIterator(uint32_t id);
 
-    kudu::client::sp::shared_ptr<kudu::client::KuduSession> openSession();
+    client::sp::shared_ptr<client::KuduSession> openSession();
 
-    static kudu::Status getSliceAsString(kudu::client::KuduScanBatch::RowPtr row,
-                                         kudu::client::KuduColumnSchema::DataType type,
+    static Status getSliceAsString(client::KuduScanBatch::RowPtr row,
+                                         client::KuduColumnSchema::DataType type,
                                          int index, std::string&);
   protected:
     Nan::Utf8String* location;
-    kudu::client::sp::shared_ptr<kudu::client::KuduClient> kuduClientPtr;
-    kudu::client::sp::shared_ptr<kudu::client::KuduTable> tablePtr;
+    client::sp::shared_ptr<client::KuduClient> kuduClientPtr;
+    client::sp::shared_ptr<client::KuduTable> tablePtr;
 
   private:
     Options options;
 
-    kudu::Status tableStatus;
+    Status tableStatus;
 
     uint32_t currentIteratorId;
     void (*pendingCloseWorker);
@@ -93,8 +94,8 @@ namespace kududown {
 
     std::map<uint32_t, kududown::Iterator*> iterators;
 
-    kudu::Status connect();
-    kudu::Status openTable(std::string);
+    Status connect();
+    Status openTable(std::string);
 
 
     static void WriteDoing(uv_work_t *req);

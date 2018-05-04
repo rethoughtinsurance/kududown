@@ -1,9 +1,11 @@
-#ifndef _WRITE_BATCH_H_
-#define _WRITE_BATCH_H_
+#ifndef KD__WRITE_BATCH_H_
+#define KD__WRITE_BATCH_H_
 
 #include <string>
 #include <vector>
 #include <client/client.h>
+
+using namespace kudu;
 
 namespace kududown {
 
@@ -86,10 +88,10 @@ namespace kududown {
     // Store the mapping "key->value" in the database.
     // in our case, the key won't be used and the value
     // will be an Avro binary object - KuduMessage?
-    void Put(const kudu::Slice& key, const kudu::Slice& value);
+    void Put(const Slice& key, const Slice& value);
 
     // If the database contains a mapping for "key", erase it.  Else do nothing.
-    void Delete(const kudu::Slice& key);
+    void Delete(const Slice& key);
 
     // Clear all updates buffered in this batch.
     void Clear();

@@ -56,9 +56,6 @@
       , "dependencies":[
              "<!(node -e \"require('node-addon-tracer')\"):node-addon-tracer"
         ]
-      , "include_dirs"  : [
-            "<!(node -e \"require('nan')\")",
-        ]
       , "libraries": [ "-Wl,-rpath, <(module_root_dir)/deps/logger/node-addon-tracer.a" ]
       , "sources": [
             "src/batch.cc"

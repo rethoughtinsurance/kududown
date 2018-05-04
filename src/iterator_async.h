@@ -3,11 +3,10 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_ITERATOR_ASYNC_H
-#define LD_ITERATOR_ASYNC_H
+#ifndef KD_ITERATOR_ASYNC_H
+#define KD_ITERATOR_ASYNC_H
 
-#include <node.h>
-#include <nan.h>
+#include <napi.h>
 
 #include "async.h"
 #include "iterator.h"

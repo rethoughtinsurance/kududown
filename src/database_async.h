@@ -3,14 +3,16 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_DATABASE_ASYNC_H
-#define LD_DATABASE_ASYNC_H
+#ifndef KD_DATABASE_ASYNC_H
+#define KD_DATABASE_ASYNC_H
 
 #include <vector>
-#include <node.h>
+#include <node_api.h>
 
 #include "kuduoptions.h"
 #include "async.h"
+
+using namespace kudu;
 
 namespace kududown {
 
@@ -40,19 +42,19 @@ public:
 
 class IOWorker: public AsyncWorker {
 public:
-  IOWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+  IOWorker(Database *database, Nan::Callback *callback, Slice key,
       v8::Local<v8::Object> &keyHandle);
 
   virtual ~IOWorker();
   virtual void WorkComplete();
 
 protected:
-  kudu::Slice key;
+  Slice key;
 };
 
 class ReadWorker: public IOWorker {
 public:
-  ReadWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+  ReadWorker(Database *database, Nan::Callback *callback, Slice key,
       bool asBuffer, bool fillCache, v8::Local<v8::Object> &keyHandle);
 
   virtual ~ReadWorker();
@@ -67,7 +69,7 @@ private:
 
 class DeleteWorker: public IOWorker {
 public:
-  DeleteWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
+  DeleteWorker(Database *database, Nan::Callback *callback, Slice key,
       bool sync, v8::Local<v8::Object> &keyHandle);
 
   virtual ~DeleteWorker();
@@ -79,8 +81,8 @@ protected:
 
 class WriteWorker: public DeleteWorker {
 public:
-  WriteWorker(Database *database, Nan::Callback *callback, kudu::Slice key,
-      kudu::Slice value, bool sync, v8::Local<v8::Object> &keyHandle,
+  WriteWorker(Database *database, Nan::Callback *callback, Slice key,
+      Slice value, bool sync, v8::Local<v8::Object> &keyHandle,
       v8::Local<v8::Object> &valueHandle);
 
   virtual ~WriteWorker();
@@ -88,7 +90,7 @@ public:
   virtual void WorkComplete();
 
 private:
-  kudu::Slice value;
+  Slice value;
 };
 
 class BatchWorker: public AsyncWorker {
@@ -109,7 +111,7 @@ private:
 class ApproximateSizeWorker: public AsyncWorker {
 public:
   ApproximateSizeWorker(Database *database, Nan::Callback *callback,
-      kudu::Slice start, kudu::Slice end, v8::Local<v8::Object> &startHandle,
+      Slice start, Slice end, v8::Local<v8::Object> &startHandle,
       v8::Local<v8::Object> &endHandle);
 
   virtual
@@ -122,14 +124,14 @@ public:
   WorkComplete();
 
 private:
-  //kudu::Range range;
+  //Range range;
   uint64_t size;
 };
 
 class CompactRangeWorker: public AsyncWorker {
 public:
   CompactRangeWorker(Database *database, Nan::Callback *callback,
-      kudu::Slice start, kudu::Slice end, v8::Local<v8::Object> &startHandle,
+      Slice start, Slice end, v8::Local<v8::Object> &startHandle,
       v8::Local<v8::Object> &endHandle);
 
   virtual
@@ -142,8 +144,8 @@ public:
   WorkComplete();
 
 private:
-  kudu::Slice rangeStart;
-  kudu::Slice rangeEnd;
+  Slice rangeStart;
+  Slice rangeEnd;
 };
 
 } // namespace kududown

@@ -3,6 +3,8 @@
 
 using namespace std;
 
+using namespace kudu;
+
 namespace kududown {
 
   WriteBatch::WriteBatch() : hasData(false) {
@@ -22,7 +24,7 @@ namespace kududown {
   }
 
   void
-  WriteBatch::Put(const kudu::Slice& key, const kudu::Slice& value) {
+  WriteBatch::Put(const Slice& key, const Slice& value) {
     BatchOp* newOp = new BatchOp('p');
     if (!key.empty()) {
       newOp->addKey(key.ToString());
@@ -35,7 +37,7 @@ namespace kududown {
   }
 
   void
-  WriteBatch::Delete(const kudu::Slice& key) {
+  WriteBatch::Delete(const Slice& key) {
     BatchOp* newOp = new BatchOp('d');
     newOp->addValue(key.ToString());
     this->ops.push_back(newOp);

@@ -8,7 +8,7 @@
 #ifndef __kududown_async_h__
 #define __kududown_async_h__
 
-#include <node.h>
+#include <node_api.h>
 
 #include "async.h"
 

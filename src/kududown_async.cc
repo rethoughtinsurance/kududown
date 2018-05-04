@@ -8,6 +8,8 @@
 #include "kududown.h"
 #include "kududown_async.h"
 
+using namespace kudu;
+
 namespace kududown {
 
 /** DESTROY WORKER **/
@@ -25,7 +27,7 @@ DestroyWorker::~DestroyWorker () {
 
 void DestroyWorker::Execute () {
   kududown::Options options;
-  SetStatus(kudu::Status::OK());
+  SetStatus(Status::OK());
 }
 
 /** REPAIR WORKER **/
@@ -43,7 +45,7 @@ RepairWorker::~RepairWorker () {
 
 void RepairWorker::Execute () {
   kududown::Options options;
-  SetStatus(kudu::Status::OK());
+  SetStatus(Status::OK());
 }
 
 } // namespace kududown

@@ -3,11 +3,10 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_BATCH_ASYNC_H
-#define LD_BATCH_ASYNC_H
+#ifndef KD_BATCH_ASYNC_H
+#define KD_BATCH_ASYNC_H
 
-#include <node.h>
-#include <nan.h>
+#include <napi.h>
 
 #include "async.h"
 #include "batch.h"
@@ -17,7 +16,7 @@ namespace kududown {
 
   class BatchWriteWorker : public AsyncWorker {
   public:
-    BatchWriteWorker(Batch* batch, Nan::Callback *callback);
+    BatchWriteWorker(Batch* batch);
 
     virtual ~BatchWriteWorker();
     virtual void Execute();

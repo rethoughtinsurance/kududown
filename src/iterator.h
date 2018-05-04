@@ -3,16 +3,17 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef _ITERATOR_H__
-#define _ITERATOR_H__
+#ifndef KD_ITERATOR_H__
+#define KD_ITERATOR_H__
 
-#include <node.h>
+#include <napi.h>
 #include <vector>
-#include <nan.h>
 
 #include "async.h"
 #include "kududown.h"
 #include "kuduoptions.h"
+
+using namespace kudu;
 
 namespace kududown {
 
@@ -36,7 +37,7 @@ public:
 
   bool IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
 
-  kudu::Status IteratorStatus();
+  Status IteratorStatus();
 
   void IteratorEnd();
 
@@ -75,10 +76,10 @@ public:
 private:
   bool CreateScanner();
 
-  kudu::Status iteratorStatus;
-  kudu::client::KuduScanner* scanner;
-  kudu::client::KuduScanBatch* batch;
-  kudu::client::KuduSchema schema;
+  Status iteratorStatus;
+  client::KuduScanner* scanner;
+  client::KuduScanBatch* batch;
+  client::KuduSchema schema;
 
   static NAN_METHOD(New);
   static NAN_METHOD(Seek);
@@ -92,7 +93,7 @@ private:
 
 /*
  if (kuduClientPtr == 0) {
- return kudu::Status::RuntimeError(
+ return Status::RuntimeError(
  "Not connected. Unable to perform write operation.");
  }
  if (tablePtr == 0) {
@@ -100,36 +101,36 @@ private:
  return this->tableStatus;
  }
 
- kudu::client::KuduScanner scanner(tablePtr.get());
+ client::KuduScanner scanner(tablePtr.get());
 
  //addPredicates(scanner, predicates);
 
  scanner.KeepAlive();
- kudu::Status st = scanner.Open();
+ Status st = scanner.Open();
 
  std::string msg("Unable to get table scanner: ");
  msg.append(st.ToString());
 
  CHECK_OK_OR_RETURN(st, msg);
 
- kudu::client::KuduScanBatch batch;
+ client::KuduScanBatch batch;
 
  int num_rows = 0;
 
  while (scanner.HasMoreRows()) {
  scanner.NextBatch(&batch);
  num_rows += batch.NumRows();
- kudu::client::KuduSchema schema = scanner.GetProjectionSchema();
+ client::KuduSchema schema = scanner.GetProjectionSchema();
 
- for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
+ for (client::KuduScanBatch::const_iterator it = batch.begin();
  it != batch.end(); ++it) {
 
- kudu::client::KuduScanBatch::RowPtr row(*it);
+ client::KuduScanBatch::RowPtr row(*it);
  std::string newRow;
 
  for (size_t x = 0; x < schema.num_columns(); ++x) {
  std::string str;
- kudu::Status st = getSliceAsString(row, schema.Column(x).type(), x,
+ Status st = getSliceAsString(row, schema.Column(x).type(), x,
  str);
  newRow.append(str);
  if (x + 1 < schema.num_columns())

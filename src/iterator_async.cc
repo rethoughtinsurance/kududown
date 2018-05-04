@@ -3,8 +3,7 @@
 // * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
 // */
 //
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include "database.h"
 #include "async.h"
