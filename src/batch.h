@@ -13,7 +13,7 @@ namespace kududown {
 
   class Batch : public Nan::ObjectWrap {
   public:
-    static void Init();
+    void Init(Napi::Env env, Napi::Object exports);
 
     static v8::Local<v8::Value>
     NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Object> optionsObj);

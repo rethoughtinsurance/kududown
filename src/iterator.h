@@ -22,7 +22,7 @@ class Database;
 class Iterator : public Nan::ObjectWrap {
 
 public:
-  static void Init();
+  static void Init(Napi::Env env, Napi::Object exports);
 
   static v8::Local<v8::Object>
   NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,

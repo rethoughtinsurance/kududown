@@ -15,66 +15,15 @@
 
 namespace kududown {
 
-NAN_METHOD(DestroyDB) {
-  Nan::HandleScope scope;
+Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
 
-  Nan::Utf8String* location = new Nan::Utf8String(info[0]);
-
-  Nan::Callback* callback = new Nan::Callback(
-      v8::Local<v8::Function>::Cast(info[1]));
-
-  DestroyWorker* worker = new DestroyWorker(
-      location
-    , callback
-  );
-
-  Nan::AsyncQueueWorker(worker);
-
-  info.GetReturnValue().SetUndefined();
-}
-
-NAN_METHOD(RepairDB) {
-  Nan::HandleScope scope;
-
-  Nan::Utf8String* location = new Nan::Utf8String(info[0]);
-
-  Nan::Callback* callback = new Nan::Callback(
-      v8::Local<v8::Function>::Cast(info[1]));
-
-  RepairWorker* worker = new RepairWorker(
-      location
-    , callback
-  );
-
-  Nan::AsyncQueueWorker(worker);
-
-  info.GetReturnValue().SetUndefined();
-}
-
-void Init(v8::Local<v8::Object> target) {
-
-  Database::Init();
-  kududown::Iterator::Init();
-  kududown::Batch::Init();
-
-  v8::Local<v8::Function> kududown =
-      Nan::New<v8::FunctionTemplate>(KuduDOWN)->GetFunction();
-
-  kududown->Set(
-      Nan::New("destroy").ToLocalChecked()
-    , Nan::New<v8::FunctionTemplate>(DestroyDB)->GetFunction()
-  );
-
-  kududown->Set(
-      Nan::New("repair").ToLocalChecked()
-    , Nan::New<v8::FunctionTemplate>(RepairDB)->GetFunction()
-  );
-
-  target->Set(Nan::New("kududown").ToLocalChecked(), kududown);
+  kududown::Iterator::Init(Napi::Env env, Napi::Object exports);
+  kududown::Batch::Init(Napi::Env env, Napi::Object exports);
 
   //node_addon_tracer::tracer::Init(target);
+  return Database::Init(Napi::Env env, Napi::Object exports);
 }
 
-NODE_MODULE(kududown, Init)
+NODE_API_MODULE(kududown, InitAll)
 
 } // namespace kududown
