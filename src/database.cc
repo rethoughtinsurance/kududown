@@ -166,21 +166,29 @@ namespace kududown {
 
     // make a predicate for <tableName>.key column and get a value
     // equal to the passed in key
+
+    // TODO: make key name(s) based on schema
+    // kudu::Schema schema = tablePtr->schema();
     kudu::client::KuduPredicate* p = tablePtr->NewComparisonPredicate(
         "key", kudu::client::KuduPredicate::ComparisonOp::EQUAL,
         kudu::client::KuduValue::CopyString(key));
 
-    scanner.AddConjunctPredicate(p);
-    tracer::Log("Database" , LogLevel::TRACE,
-                std::string("ADDED PREDICATE FOR KEY: ") + key.ToString());
-
+    kudu::Status st = scanner.AddConjunctPredicate(p);
+    if (!st.ok()) {
+      tracer::Log("Database" , LogLevel::DEBUG,
+                      std::string("FAILED TO ADD PREDICATE FOR KEY: ") + key.ToDebugString());
+      tracer::Log("Database", LogLevel::DEBUG, std::string(st.ToString()));
+    }
+    else {
+      tracer::Log("Database" , LogLevel::DEBUG,
+                std::string("ADDED PREDICATE FOR KEY: ") + key.ToDebugString());
+    }
     //scanner.KeepAlive();
-    kudu::Status st = scanner.Open();
-
-    std::string msg("Unable to get table scanner: ");
-    msg.append(st.ToString());
+    st = scanner.Open();
 
     if (!st.ok()) {
+      std::string msg("Unable to get table scanner: ");
+      msg.append(st.ToString());
       scanner.Close();
       tracer::Log("Database" , LogLevel::DEBUG, st.ToString());
       return st;
@@ -189,7 +197,7 @@ namespace kududown {
     kudu::client::KuduScanBatch batch;
 
     int num_rows = 0;
-
+    tracer::Log("Database::GetFromDatabase", LogLevel::DEBUG, std::string("Starting SCAN."));
     while (scanner.HasMoreRows()) {
       scanner.NextBatch(&batch);
       num_rows += batch.NumRows();
@@ -220,7 +228,7 @@ namespace kududown {
     if (num_rows == 0) {
       std::string msg("NotFound: " + key.ToDebugString() + " was not found");
       kudu::Status status = kudu::Status::NotFound(msg);
-      tracer::Log("Database" , LogLevel::TRACE, status.ToString());
+      tracer::Log("Database" , LogLevel::DEBUG, status.ToString());
       //value.clear();
       return status;
     }
@@ -250,7 +258,7 @@ namespace kududown {
         if (!st.ok()) {
           return st;
         }
-        output = slice.ToString();
+        output = b == true ? "true" : "false";
         return st;
       }
       case kudu::client::KuduColumnSchema::DataType::DOUBLE: {

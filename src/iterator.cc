@@ -43,25 +43,26 @@ namespace kududown {
     options = new ReadOptions();
 
     endWorker = NULL;
-
-    // create the Scanner
-    batch = new kudu::client::KuduScanBatch();
     scanner = 0;
-    scanner = new kudu::client::KuduScanner(database->tablePtr.get());
-    scanner->SetBatchSizeBytes(0);
-    scanner->KeepAlive();
-    iteratorStatus = scanner->Open();
-
-    tracer::Log("Iterator", LogLevel::DEBUG, "Iterator CTOR");
-
-    if (!iteratorStatus.ok()) {
-      scanner->Close();
-      delete scanner;
-      scanner = 0;
-      tracer::Log("Iterator", LogLevel::DEBUG, iteratorStatus.ToString());
-    }
-    scanner->SetBatchSizeBytes(highWaterMark);
-    schema = scanner->GetProjectionSchema();
+    batch = 0;
+//    // create the Scanner
+//    batch = new kudu::client::KuduScanBatch();
+//    scanner = new kudu::client::KuduScanner(database->tablePtr.get());
+//    scanner->SetBatchSizeBytes(0);
+//    scanner->SetFaultTolerant();
+//    scanner->KeepAlive();
+//    iteratorStatus = scanner->Open();
+//
+//    tracer::Log("Iterator", LogLevel::DEBUG, "Iterator CTOR");
+//
+//    if (!iteratorStatus.ok()) {
+//      scanner->Close();
+//      delete scanner;
+//      scanner = 0;
+//      tracer::Log("Iterator", LogLevel::DEBUG, iteratorStatus.ToString());
+//    }
+//    scanner->SetBatchSizeBytes(highWaterMark);
+//    schema = scanner->GetProjectionSchema();
 
     tracer::Log("Iterator", LogLevel::DEBUG, "Iterator constructed");
   }
@@ -88,10 +89,15 @@ namespace kududown {
   bool
   Iterator::IteratorNext(std::vector<std::pair<std::string, std::string> >& result) {
 
+    if (!CreateScanner()) {
+      if (scanner == 0) return false;
+    }
+
     size_t size = 0;
 
     if (!iteratorStatus.ok()) {
       tracer::Log("IteratorNext", LogLevel::WARN, iteratorStatus.ToString());
+      nexting = false;
       return false;
     }
 
@@ -99,6 +105,7 @@ namespace kududown {
       char tmp[128];
       sprintf(tmp, "totalRowCount of %lu exceeds limit of %d", totalRowCount, limit);
       tracer::Log("IteratorNext", LogLevel::WARN, tmp);
+      nexting = false;
       return false;
     }
 
@@ -118,9 +125,11 @@ namespace kududown {
         if (!iteratorStatus.ok()) {
           tracer::Log("IteratorNext", LogLevel::DEBUG, iteratorStatus.ToString());
           scanner->Close();
+          nexting = false;
           return false;
         }
 
+        nexting = true;
         batchRowCount = batch->NumRows();
         totalRowCount += batchRowCount;
         char tmp[128];
@@ -129,6 +138,7 @@ namespace kududown {
       }
       if (batchRowCount == 0) {
         // nothing left to read
+        nexting = false;
         return false;
       }
     }
@@ -147,11 +157,13 @@ namespace kududown {
       iteratorStatus = Database::getSliceAsString(row, schema.Column(0).type(), 0, key);
       if (!iteratorStatus.ok()) {
         tracer::Log("Iterator", LogLevel::ERROR, iteratorStatus.ToString());
+        nexting = false;
         return false;
       }
       iteratorStatus = Database::getSliceAsString(row, schema.Column(1).type(), 1, value);
       if (!iteratorStatus.ok()) {
         tracer::Log("Iterator", LogLevel::ERROR, iteratorStatus.ToString());
+        nexting = false;
         return false;
       }
       tracer::Log("Iterator", LogLevel::TRACE, "Read key: " + key);
@@ -162,8 +174,41 @@ namespace kududown {
     char tmp[128];
     sprintf(tmp, "Total rows read so far: %lu", totalRowCount);
     tracer::Log("Iterator", LogLevel::DEBUG, tmp);
-
+    nexting = true;
     return true;
+  }
+
+  bool
+  Iterator::CreateScanner() {
+    // return false if the scanner is already created or
+    // if we're unable to create it
+    if (scanner == 0) {
+      // create the Scanner
+
+      scanner = new kudu::client::KuduScanner(database->tablePtr.get());
+
+      scanner->SetBatchSizeBytes(highWaterMark);
+      scanner->KeepAlive();
+
+      iteratorStatus = scanner->Open();
+
+      tracer::Log("Iterator", LogLevel::DEBUG, "Scanner created.");
+
+      if (!iteratorStatus.ok()) {
+        scanner->Close();
+        delete scanner;
+        scanner = 0;
+        tracer::Log("Iterator", LogLevel::DEBUG, iteratorStatus.ToString());
+        return false;
+      }
+
+      schema = scanner->GetProjectionSchema();
+
+      batch = new kudu::client::KuduScanBatch();
+
+      return true;
+    }
+    return false;
   }
 
   kudu::Status
@@ -173,6 +218,7 @@ namespace kududown {
 
   void
   Iterator::IteratorEnd() {
+    tracer::Log("IteratorEnd", LogLevel::DEBUG, "Iterator ended");
   }
 
   void
@@ -182,7 +228,6 @@ namespace kududown {
 
   void
   checkEndCallback(Iterator* iterator) {
-
     if (iterator->endWorker != NULL) {
       Nan::AsyncQueueWorker(iterator->endWorker);
       iterator->endWorker = NULL;

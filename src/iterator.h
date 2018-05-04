@@ -73,6 +73,7 @@ public:
   AsyncWorker* endWorker;
 
 private:
+  bool CreateScanner();
 
   kudu::Status iteratorStatus;
   kudu::client::KuduScanner* scanner;
