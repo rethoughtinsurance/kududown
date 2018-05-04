@@ -85,19 +85,21 @@ export interface KuduScan {
 }
 
 
-export interface KuduDataValue {
-	dataType: KuduDataType;
-	value?: null | undefined | string | Buffer;
-}
-
 export interface KuduRow {
-	values: KuduDataValue[];
+	values: (null | undefined | string | Buffer)[];
 }
 
 
 export interface KuduScanResult {
 	scanId: string;
 	rows: KuduRow[];
+}
+
+
+export interface KuduScanResultDef {
+	scanId: string;
+	tableName: string;
+	columnList: KuduColumnDef[];
 }
 
 

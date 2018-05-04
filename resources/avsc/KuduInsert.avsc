@@ -66,17 +66,7 @@
         "name" : "values",
         "type" : {
           "type" : "array",
-          "items" : {
-            "type" : "record",
-            "name" : "KuduDataValue",
-            "fields" : [ {
-              "name" : "dataType",
-              "type" : "KuduDataType"
-            }, {
-              "name" : "value",
-              "type" : [ "null", "string", "bytes" ]
-            } ]
-          }
+          "items" : [ "null", "string", "bytes" ]
         }
       } ]
     }

@@ -112,13 +112,6 @@ kuduDownSchemaAvscMap.set("KuduDataValue", {
   name : "KuduDataValue",
   namespace : "org.kududown.avro",
   fields : [ {
-    name : "dataType",
-    type : {
-      type : "enum",
-      name : "KuduDataType",
-      symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
-    }
-  }, {
     name : "value",
     type : [ "null", "string", "bytes" ]
   } ]
@@ -237,17 +230,7 @@ kuduDownSchemaAvscMap.set("KuduInsert", {
         name : "values",
         type : {
           type : "array",
-          items : {
-            type : "record",
-            name : "KuduDataValue",
-            fields : [ {
-              name : "dataType",
-              type : "KuduDataType"
-            }, {
-              name : "value",
-              type : [ "null", "string", "bytes" ]
-            } ]
-          }
+          items : [ "null", "string", "bytes" ]
         }
       } ]
     }
@@ -323,17 +306,7 @@ kuduDownSchemaAvscMap.set("KuduKey", {
         name : "values",
         type : {
           type : "array",
-          items : {
-            type : "record",
-            name : "KuduDataValue",
-            fields : [ {
-              name : "dataType",
-              type : "KuduDataType"
-            }, {
-              name : "value",
-              type : [ "null", "string", "bytes" ]
-            } ]
-          }
+          items : [ "null", "string", "bytes" ]
         }
       } ]
     }
@@ -480,21 +453,7 @@ kuduDownSchemaAvscMap.set("KuduRow", {
     name : "values",
     type : {
       type : "array",
-      items : {
-        type : "record",
-        name : "KuduDataValue",
-        fields : [ {
-          name : "dataType",
-          type : {
-            type : "enum",
-            name : "KuduDataType",
-            symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
-          }
-        }, {
-          name : "value",
-          type : [ "null", "string", "bytes" ]
-        } ]
-      }
+      items : [ "null", "string", "bytes" ]
     }
   } ]
 }
@@ -634,22 +593,56 @@ kuduDownSchemaAvscMap.set("KuduScanResult", {
           name : "values",
           type : {
             type : "array",
-            items : {
-              type : "record",
-              name : "KuduDataValue",
-              fields : [ {
-                name : "dataType",
-                type : {
-                  type : "enum",
-                  name : "KuduDataType",
-                  symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
-                }
-              }, {
-                name : "value",
-                type : [ "null", "string", "bytes" ]
-              } ]
-            }
+            items : [ "null", "string", "bytes" ]
           }
+        } ]
+      }
+    }
+  } ]
+}
+);
+
+kuduDownSchemaAvscMap.set("KuduScanResultDef", {
+  type : "record",
+  name : "KuduScanResultDef",
+  namespace : "org.kududown.avro",
+  doc : "* Optionally returned as the first row for a KuduScanResult,\n   * for use with the kududown API, which would then be followed by\n   * KuduRow instances. This can only be used with a kududown\n   * Iterator (`createReadStream`), not with 'get'. If the\n   * KuduScanResultDef row is desired it will be specified in the options:\n   * 'kuduScanResultDef: true'.",
+  fields : [ {
+    name : "scanId",
+    type : "string"
+  }, {
+    name : "tableName",
+    type : "string"
+  }, {
+    name : "columnList",
+    type : {
+      type : "array",
+      items : {
+        type : "record",
+        name : "KuduColumnDef",
+        fields : [ {
+          name : "columnName",
+          type : "string"
+        }, {
+          name : "dataType",
+          type : {
+            type : "enum",
+            name : "KuduDataType",
+            symbols : [ "BOOLEAN", "INT8", "INT16", "INT32", "INT64", "UNIXTIME64", "FLOAT32", "FLOAT64", "DECIMAL", "STRING", "BINARY" ]
+          }
+        }, {
+          name : "allowNull",
+          type : "boolean"
+        }, {
+          name : "encoding",
+          type : [ "null", {
+            type : "enum",
+            name : "KuduColumnEncoding",
+            symbols : [ "AUTO_ENCODING", "PLAIN_ENCODING", "RLE", "DICT_ENCODING", "BIT_SHUFFLE", "PREFIX_ENCODING" ]
+          } ]
+        }, {
+          name : "isPrimaryKey",
+          type : "boolean"
         } ]
       }
     }
@@ -777,17 +770,7 @@ kuduDownSchemaAvscMap.set("KuduUpsert", {
         name : "values",
         type : {
           type : "array",
-          items : {
-            type : "record",
-            name : "KuduDataValue",
-            fields : [ {
-              name : "dataType",
-              type : "KuduDataType"
-            }, {
-              name : "value",
-              type : [ "null", "string", "bytes" ]
-            } ]
-          }
+          items : [ "null", "string", "bytes" ]
         }
       } ]
     }

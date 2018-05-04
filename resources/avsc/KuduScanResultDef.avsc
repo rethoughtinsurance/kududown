@@ -1,30 +1,16 @@
 {
   "type" : "record",
-  "name" : "KuduUpsert",
+  "name" : "KuduScanResultDef",
   "namespace" : "org.kududown.avro",
-  "doc" : "* A KuduUpsert KuduRow contains all requested columns, primary key or otherwise.",
+  "doc" : "* Optionally returned as the first row for a KuduScanResult,\n   * for use with the kududown API, which would then be followed by\n   * KuduRow instances. This can only be used with a kududown\n   * Iterator (`createReadStream`), not with 'get'. If the\n   * KuduScanResultDef row is desired it will be specified in the options:\n   * 'kuduScanResultDef: true'.",
   "fields" : [ {
-    "name" : "op",
-    "type" : {
-      "type" : "record",
-      "name" : "KuduOperation",
-      "fields" : [ {
-        "name" : "id",
-        "type" : "string"
-      }, {
-        "name" : "operationType",
-        "type" : {
-          "type" : "enum",
-          "name" : "KuduOperationType",
-          "symbols" : [ "SCAN", "INSERT", "UPSERT", "DELETE" ]
-        }
-      } ]
-    }
+    "name" : "scanId",
+    "type" : "string"
   }, {
     "name" : "tableName",
     "type" : "string"
   }, {
-    "name" : "columns",
+    "name" : "columnList",
     "type" : {
       "type" : "array",
       "items" : {
@@ -55,20 +41,6 @@
           "type" : "boolean"
         } ]
       }
-    }
-  }, {
-    "name" : "row",
-    "type" : {
-      "type" : "record",
-      "name" : "KuduRow",
-      "doc" : "* KuduRow holds any row of arbitrary columns for writing or reading.",
-      "fields" : [ {
-        "name" : "values",
-        "type" : {
-          "type" : "array",
-          "items" : [ "null", "string", "bytes" ]
-        }
-      } ]
     }
   } ]
 }
