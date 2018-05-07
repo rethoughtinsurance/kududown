@@ -17,7 +17,7 @@
           }],
           ['OS == "linux"', {
                'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ],
-               'cflags_cc': [ '--std=c++14' ],
+               'cflags_cc': [ ],
                "include_dirs"  : [
                   "deps/kudu/linux/include"
                ],
@@ -53,21 +53,15 @@
               ]
           }]
         ],
-        "dependencies":[
-             "<!(node -e \"require('node-addon-tracer')\"):node-addon-tracer"
-        ],
+       # "dependencies":[
+       #      "<!(node -e \"require('node-addon-tracer')\"):node-addon-tracer"
+       # ],
         "defines": [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
         "libraries": [ "-Wl,-rpath, <(module_root_dir)/deps/logger/node-addon-tracer.a" ],
         "sources": [
-            "src/batch.cc",
-            "src/batch_async.cc",
-            "src/write_batch.cc",
             "src/database.cc",
             "src/database_async.cc",
-            "src/iterator.cc",
-            "src/iterator_async.cc",
-            "src/kududown.cc",
-            "src/kududown_async.cc"
+            "src/kududown.cc"
         ]
     }]
 }
