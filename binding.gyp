@@ -17,7 +17,7 @@
           }]
         , ['OS == "linux"', {
                'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
-            ,  'cflags_cc': [ '--std=c++14' ]
+            ,  'cflags_cc': [ '-E', '--std=c++14' ]
             ,  "include_dirs"  : [
                   "deps/kudu/linux/include"
                ]
