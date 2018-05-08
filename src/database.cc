@@ -17,7 +17,9 @@
 #include "iterator.h"
 #include "common.h"
 #include "kududown.h"
-#include "kudu/client/stubs.h"
+#include <client/client.h>
+#include <client/write_op.h>
+#include <client/value.h>
 #include "tracer.h"
 
 using namespace node_addon_tracer;
@@ -419,11 +421,11 @@ namespace kududown {
       switch (op->getOp()) {
         case 'p':
           //KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewUpsert";
-          kuduWrite = tablePtr->NewUpsert();
+          kuduWrite = (kudu::client::KuduWriteOperation*)tablePtr->NewUpsert();
           break;
         case 'd':
           //KUDU_LOG(WARNING) << "Executing WriteBatchToDatabase NewDelete";
-          kuduWrite = tablePtr->NewDelete();
+          kuduWrite = (kudu::client::KuduWriteOperation*)tablePtr->NewDelete();
           break;
         default:
           st = session->Flush();

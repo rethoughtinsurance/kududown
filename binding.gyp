@@ -24,9 +24,10 @@
             , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
           }]
         , ['OS == "mac"', {
-              'cflags': []
-            , 'cflags!': [ '-fno-rtti']
-            , 'xcode_settings': { 'GCC_ENABLE_CPP_RTTI': 'YES' }
+              'cflags_cc': [ '--std=c++14' ]
+            , 'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
+            , 'cflags!': [ '-fno-rtti', '-fno-exceptions' ]
+            , 'xcode_settings': { 'GCC_ENABLE_CPP_RTTI': 'YES', 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'}
             , 'ldflags': []
             ,  "include_dirs"  : [
                   "deps/kudu/mac/include",
@@ -53,13 +54,9 @@
               ]
           }]
         ]
-      , "dependencies":[
-             "<!(node -e \"require('node-addon-tracer')\"):node-addon-tracer"
-        ]
       , "include_dirs"  : [
             "<!(node -e \"require('nan')\")",
         ]
-      , "libraries": [ "-Wl,-rpath, <(module_root_dir)/deps/logger/node-addon-tracer.a" ]
       , "sources": [
             "src/batch.cc"
           , "src/batch_async.cc"
@@ -70,7 +67,8 @@
           , "src/iterator_async.cc"
           , "src/kududown.cc"
           , "src/kududown_async.cc"
-
+          , "src/tracer.cpp"
+          , "src/uvasync.cpp"
         ]
     }]
 }
