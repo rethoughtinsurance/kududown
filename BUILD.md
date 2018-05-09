@@ -28,6 +28,22 @@ See the test case at n-api-kududown/src/testnapi.cc and n-api-kududown/test/test
 
 # Building
 
+## Install Dev Tools
+### NPM
+Install npm as appropriate for your OS
+
+Once npm is installed, it can be used to install the other required tools.
+
+### Typescript
+npm i typescript --global
+
+### Node-gyp 
+npm i node-gyp --global
+
+### Yarn
+npm i yarn --global
+
+## Install required npm packages using YARN
 Install the required packages:
 > cd <kududown_repo>
 > yarn install
