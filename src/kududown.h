@@ -11,8 +11,10 @@
 
 #include <node.h>
 #include <node_buffer.h>
-//#include <leveldb/slice.h>
 #include <nan.h>
+
+#include <client/client.h>
+#include "kuduoptions.h"
 
 static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
   Nan::HandleScope scope;
@@ -113,8 +115,10 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
   if (info.Length() == 0)                                                      \
     return Nan::ThrowError(#name "() requires a callback argument");           \
-    kududown::Database* database =                                              \
-    Nan::ObjectWrap::Unwrap<kududown::Database>(info.This());                 \
+  \
+  kududown::Database* database =                                              \
+         Nan::ObjectWrap::Unwrap<kududown::Database>(info.This());                 \
+  \
   v8::Local<v8::Object> optionsObj;                                            \
   v8::Local<v8::Function> callback;                                            \
   if (optionPos == -1 && info[callbackPos]->IsFunction()) {                    \

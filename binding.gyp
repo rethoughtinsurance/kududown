@@ -16,16 +16,18 @@
               }
           }]
         , ['OS == "linux"', {
-              'cflags': [
-              ]
-            , 'cflags!': [ '-fno-tree-vrp']
+               'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
+            ,  'cflags_cc': [ '--std=c++14' ]
             ,  "include_dirs"  : [
                   "deps/kudu/linux/include"
                ]
-            , 'libraries': [ '-Wl,-rpath,/home/janet/git/kududown/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
+            , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
           }]
         , ['OS == "mac"', {
-              'cflags': []
+              'cflags_cc': [ '--std=c++14' ]
+            , 'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
+            , 'cflags!': [ '-fno-rtti', '-fno-exceptions' ]
+            , 'xcode_settings': { 'GCC_ENABLE_CPP_RTTI': 'YES', 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'}
             , 'ldflags': []
             ,  "include_dirs"  : [
                   "deps/kudu/mac/include",
@@ -58,12 +60,15 @@
       , "sources": [
             "src/batch.cc"
           , "src/batch_async.cc"
+          , "src/write_batch.cc"
           , "src/database.cc"
           , "src/database_async.cc"
           , "src/iterator.cc"
           , "src/iterator_async.cc"
           , "src/kududown.cc"
           , "src/kududown_async.cc"
+          , "src/tracer.cpp"
+          , "src/uvasync.cpp"
         ]
     }]
 }

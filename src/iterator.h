@@ -3,97 +3,140 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#ifndef LD_ITERATOR_H
-#define LD_ITERATOR_H
+#ifndef _ITERATOR_H__
+#define _ITERATOR_H__
 
 #include <node.h>
 #include <vector>
 #include <nan.h>
 
-#include "database.h"
 #include "async.h"
 #include "kududown.h"
+#include "kuduoptions.h"
 
 namespace kududown {
 
-  class Database;
-  class AsyncWorker;
+class Database;
 
-  class Iterator : public Nan::ObjectWrap {
-  public:
-//    static void
-//    Init();
-//
-//    static v8::Local<v8::Object>
-//    NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
-//                v8::Local<v8::Object> optionsObj);
+class Iterator : public Nan::ObjectWrap {
 
-    Iterator(/*Database* database, uint32_t id, leveldb::Slice* start,
-     std::string* end, bool reverse, bool keys, bool values, int limit,
-     std::string* lt, std::string* lte, std::string* gt,
-     std::string* gte, bool fillCache, bool keyAsBuffer,
-     bool valueAsBuffer, size_t highWaterMark*/);
+public:
+  static void Init();
 
-    ~Iterator();
+  static v8::Local<v8::Object>
+  NewInstance(v8::Local<v8::Object> database, v8::Local<v8::Number> id,
+      v8::Local<v8::Object> optionsObj);
 
-    bool
-    IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
+  Iterator(Database* database, uint32_t id, bool keys, bool values, int limit,
+      std::string* lt, std::string* lte, std::string* gt, std::string* gte,
+      bool fillCache, bool keyAsBuffer, bool valueAsBuffer,
+      unsigned int highWaterMark);
 
-    kudu::Status
-    IteratorStatus();
+  ~Iterator();
 
-    void
-    IteratorEnd();
+  bool IteratorNext(std::vector<std::pair<std::string, std::string> >& result);
 
-    void
-    Release();
+  kudu::Status IteratorStatus();
 
-    void
-    ReleaseTarget();
+  void IteratorEnd();
 
-  private:
-//    Database* database;
-//    uint32_t id;
-//    leveldb::Iterator* dbIterator;
-//    leveldb::ReadOptions* options;
-//    leveldb::Slice* start;
-//    leveldb::Slice* target;
-//    std::string* end;
-//    bool seeking;
-//    bool landed;
-//    bool reverse;
-//    bool keys;
-//    bool values;
-//    int limit;
-//    std::string* lt;
-//    std::string* lte;
-//    std::string* gt;
-//    std::string* gte;
-//    int count;
-//    size_t highWaterMark;
-//
-//  public:
-//    bool keyAsBuffer;
-//    bool valueAsBuffer;
-//    bool nexting;
-      bool ended;
-//    AsyncWorker* endWorker;
-//
-//  private:
-//    bool
-//    Read(std::string& key, std::string& value);
-//    bool
-//    GetIterator();
-//    bool
-//    OutOfRange(leveldb::Slice* target);
+  void Release();
 
-//    static NAN_METHOD(New);
-//  static NAN_METHOD(Seek);
-//  static NAN_METHOD(Next);
-//  static NAN_METHOD(End);
+
+private:
+  Database* database;
+  uint32_t id;
+  //Iterator* dbIterator;
+  ReadOptions* options;
+
+  bool seeking;
+  bool keys;
+  bool values;
+  bool inBatch;
+  int limit; // -1 is unlimited, otherwise this is a row limit
+
+  std::string* lt;
+  std::string* lte;
+  std::string* gt;
+  std::string* gte;
+  size_t batchRowCount;
+  size_t currentRowCount;
+  size_t totalRowCount;
+
+public:
+  bool keyAsBuffer;
+  bool valueAsBuffer;
+
+  unsigned int highWaterMark;
+  bool nexting;
+  bool ended;
+  AsyncWorker* endWorker;
+
+private:
+  bool CreateScanner();
+
+  kudu::Status iteratorStatus;
+  kudu::client::KuduScanner* scanner;
+  kudu::client::KuduScanBatch* batch;
+  kudu::client::KuduSchema schema;
+
+  static NAN_METHOD(New);
+  static NAN_METHOD(Seek);
+  static NAN_METHOD(Next);
+  static NAN_METHOD(End);
 };
 
-}
- // namespace kududown
+} // namespace kududown
 
 #endif
+
+/*
+ if (kuduClientPtr == 0) {
+ return kudu::Status::RuntimeError(
+ "Not connected. Unable to perform write operation.");
+ }
+ if (tablePtr == 0) {
+ KUDU_LOG(ERROR)<< tableStatus.ToString();
+ return this->tableStatus;
+ }
+
+ kudu::client::KuduScanner scanner(tablePtr.get());
+
+ //addPredicates(scanner, predicates);
+
+ scanner.KeepAlive();
+ kudu::Status st = scanner.Open();
+
+ std::string msg("Unable to get table scanner: ");
+ msg.append(st.ToString());
+
+ CHECK_OK_OR_RETURN(st, msg);
+
+ kudu::client::KuduScanBatch batch;
+
+ int num_rows = 0;
+
+ while (scanner.HasMoreRows()) {
+ scanner.NextBatch(&batch);
+ num_rows += batch.NumRows();
+ kudu::client::KuduSchema schema = scanner.GetProjectionSchema();
+
+ for (kudu::client::KuduScanBatch::const_iterator it = batch.begin();
+ it != batch.end(); ++it) {
+
+ kudu::client::KuduScanBatch::RowPtr row(*it);
+ std::string newRow;
+
+ for (size_t x = 0; x < schema.num_columns(); ++x) {
+ std::string str;
+ kudu::Status st = getSliceAsString(row, schema.Column(x).type(), x,
+ str);
+ newRow.append(str);
+ if (x + 1 < schema.num_columns())
+ newRow.append(",");
+ }
+
+ //resultSet.resultRows.push_back(newRow);
+ }
+ }
+ */

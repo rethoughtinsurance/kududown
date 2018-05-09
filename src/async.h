@@ -8,18 +8,19 @@
 
 #include <node.h>
 #include <nan.h>
-#include "database.h"
+
 
 namespace kududown {
 
 class Database;
 
-/* abstract */ class AsyncWorker : public Nan::AsyncWorker {
+/* abstract */
+class AsyncWorker: public Nan::AsyncWorker {
+
 public:
-  AsyncWorker (
-      kududown::Database* database
-    , Nan::Callback *callback
-  ) : Nan::AsyncWorker(callback), database(database) { }
+  AsyncWorker(Database* database, Nan::Callback *callback) :
+      Nan::AsyncWorker(callback), database(database) {
+  }
 
 protected:
   void SetStatus(kudu::Status status) {
@@ -27,7 +28,9 @@ protected:
     if (!status.ok())
       SetErrorMessage(status.ToString().c_str());
   }
+
   Database* database;
+
 private:
   kudu::Status status;
 };

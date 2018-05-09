@@ -1,7 +1,7 @@
 const BUFFERS = false
     , CHAINED = false
 
-var leveldown  = require('..')
+var leveldown  = require('../ts/lib/kududown')
   , crypto     = require('crypto')
   , assert     = require('assert')
   , writeCount = 0

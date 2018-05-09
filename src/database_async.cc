@@ -77,7 +77,7 @@ namespace kududown {
       : AsyncWorker(database, callback), key(key) {
     Nan::HandleScope scope;
 
-    //SaveToPersistent("key", keyHandle);
+    SaveToPersistent("key", keyHandle);
   }
 
   IOWorker::~IOWorker() {
@@ -91,49 +91,49 @@ namespace kududown {
     AsyncWorker::WorkComplete();
   }
 
-//  /** READ WORKER **/
-//
-//  ReadWorker::ReadWorker(/*Database *database, Nan::Callback *callback,
-//                         leveldb::Slice key, bool asBuffer, bool fillCache,
-//                         v8::Local<v8::Object> &keyHandle*/)
-//      : IOWorker(database, callback, key, keyHandle), asBuffer(asBuffer) {
-//    Nan::HandleScope scope;
-//
-//    options = new leveldb::ReadOptions();
-//    options->fill_cache = fillCache;
-//    SaveToPersistent("key", keyHandle);
-//  }
-//  ;
-//
-//  ReadWorker::~ReadWorker() {
-//    delete options;
-//  }
-//
-//  void
-//  ReadWorker::Execute() {
-//    SetStatus(database->GetFromDatabase(options, key, value));
-//  }
-//
-//  void
-//  ReadWorker::HandleOKCallback() {
-//    Nan::HandleScope scope;
-//
-//    v8::Local<v8::Value> returnValue;
-//    if (asBuffer) {
-//      //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
-//      //and avoid an an extra allocation. We'd have to clean up properly when not OK
-//      //and let the new Buffer manage the data when OK
-//      returnValue =
-//          Nan::CopyBuffer((char*) value.data(), value.size()).ToLocalChecked();
-//    }
-//    else {
-//      returnValue =
-//          Nan::New<v8::String>((char*) value.data(), value.size()).ToLocalChecked();
-//    }
-//    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
-//    callback->Call(2, argv);
-//  }
-//
+  /** READ WORKER **/
+
+  ReadWorker::ReadWorker(Database *database, Nan::Callback *callback,
+                         kudu::Slice key, bool asBuffer, bool fillCache,
+                         v8::Local<v8::Object> &keyHandle)
+      : IOWorker(database, callback, key, keyHandle), asBuffer(asBuffer) {
+    Nan::HandleScope scope;
+
+    options = new ReadOptions();
+    //options->fill_cache = fillCache;
+    SaveToPersistent("key", keyHandle);
+  }
+  ;
+
+  ReadWorker::~ReadWorker() {
+    delete options;
+  }
+
+  void
+  ReadWorker::Execute() {
+    SetStatus(database->GetFromDatabase(options, key, value));
+  }
+
+  void
+  ReadWorker::HandleOKCallback() {
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Value> returnValue;
+    if (asBuffer) {
+      //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
+      //and avoid an an extra allocation. We'd have to clean up properly when not OK
+      //and let the new Buffer manage the data when OK
+      returnValue =
+          Nan::CopyBuffer((char*) value.data(), value.size()).ToLocalChecked();
+    }
+    else {
+      returnValue =
+          Nan::New<v8::String>((char*) value.data(), value.size()).ToLocalChecked();
+    }
+    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
+    callback->Call(2, argv);
+  }
+
   /** DELETE WORKER **/
 
   DeleteWorker::DeleteWorker(Database *database, Nan::Callback *callback,
@@ -185,109 +185,108 @@ namespace kududown {
     IOWorker::WorkComplete();
   }
 
-//  /** BATCH WORKER **/
-//
-//  BatchWorker::BatchWorker(Database *database, Nan::Callback *callback,
-//                           leveldb::WriteBatch* batch, bool sync)
-//      : AsyncWorker(database, callback), batch(batch) {
-//    options = new leveldb::WriteOptions();
-//    options->sync = sync;
-//  }
-//  ;
-//
-//  BatchWorker::~BatchWorker() {
-//    delete batch;
-//    delete options;
-//  }
-//
-//  void
-//  BatchWorker::Execute() {
-//    SetStatus(database->WriteBatchToDatabase(options, batch));
-//  }
-//
-//  /** APPROXIMATE SIZE WORKER **/
-//
-//  ApproximateSizeWorker::ApproximateSizeWorker(
-//      Database *database, Nan::Callback *callback, leveldb::Slice start,
-//      leveldb::Slice end, v8::Local<v8::Object> &startHandle,
-//      v8::Local<v8::Object> &endHandle)
-//      : AsyncWorker(database, callback), range(start, end) {
-//    Nan::HandleScope scope;
-//
-//    SaveToPersistent("start", startHandle);
-//    SaveToPersistent("end", endHandle);
-//  }
-//  ;
-//
-//  ApproximateSizeWorker::~ApproximateSizeWorker() {
-//  }
-//
-//  void
-//  ApproximateSizeWorker::Execute() {
-//    size = database->ApproximateSizeFromDatabase(&range);
-//  }
-//
-//  void
-//  ApproximateSizeWorker::WorkComplete() {
-//    Nan::HandleScope scope;
-//
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
-//    AsyncWorker::WorkComplete();
-//  }
-//
-//  void
-//  ApproximateSizeWorker::HandleOKCallback() {
-//    Nan::HandleScope scope;
-//
-//    v8::Local<v8::Value> returnValue = Nan::New<v8::Number>((double) size);
-//    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
-//    callback->Call(2, argv);
-//  }
-//
+  /** BATCH WORKER **/
+
+  BatchWorker::BatchWorker(Database *database, Nan::Callback *callback,
+                           WriteBatch* batch, bool sync)
+      : AsyncWorker(database, callback), batch(batch) {
+    options = new WriteOptions();
+    //options->sync = sync;
+  }
+  ;
+
+  BatchWorker::~BatchWorker() {
+    delete batch;
+    delete options;
+  }
+
+  void
+  BatchWorker::Execute() {
+    SetStatus(database->WriteBatchToDatabase(options, batch));
+  }
+
+  /** APPROXIMATE SIZE WORKER **/
+
+  ApproximateSizeWorker::ApproximateSizeWorker(
+      Database *database, Nan::Callback *callback, kudu::Slice start,
+      kudu::Slice end, v8::Local<v8::Object> &startHandle,
+      v8::Local<v8::Object> &endHandle)
+      : AsyncWorker(database, callback), size(0) { // , range(start, end) {
+    Nan::HandleScope scope;
+
+    SaveToPersistent("start", startHandle);
+    SaveToPersistent("end", endHandle);
+  }
+  ;
+
+  ApproximateSizeWorker::~ApproximateSizeWorker() {
+  }
+
+  void
+  ApproximateSizeWorker::Execute() {
+    //size = database->ApproximateSizeFromDatabase(&range);
+  }
+
+  void
+  ApproximateSizeWorker::WorkComplete() {
+    //Nan::HandleScope scope;
+
+    //DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
+    //DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
+    AsyncWorker::WorkComplete();
+  }
+
+  void
+  ApproximateSizeWorker::HandleOKCallback() {
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Value> returnValue = Nan::New<v8::Number>((double) size);
+    v8::Local<v8::Value> argv[] = { Nan::Null(), returnValue };
+    callback->Call(2, argv);
+  }
+
 //  /** COMPACT RANGE WORKER **/
-//
-//  CompactRangeWorker::CompactRangeWorker(Database *database,
-//                                         Nan::Callback *callback,
-//                                         leveldb::Slice start,
-//                                         leveldb::Slice end,
-//                                         v8::Local<v8::Object> &startHandle,
-//                                         v8::Local<v8::Object> &endHandle)
-//      : AsyncWorker(database, callback) {
-//    Nan::HandleScope scope;
-//
-//    rangeStart = start;
-//    rangeEnd = end;
-//
-//    SaveToPersistent("compactStart", startHandle);
-//    SaveToPersistent("compactEnd", endHandle);
-//  }
-//  ;
-//
-//  CompactRangeWorker::~CompactRangeWorker() {
-//  }
-//
-//  void
-//  CompactRangeWorker::Execute() {
-//    database->CompactRangeFromDatabase(&rangeStart, &rangeEnd);
-//  }
-//
-//  void
-//  CompactRangeWorker::WorkComplete() {
-//    Nan::HandleScope scope;
-//
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("compactStart"),
-//                                   rangeStart);
-//    DisposeStringOrBufferFromSlice(GetFromPersistent("compactEnd"), rangeEnd);
-//    AsyncWorker::WorkComplete();
-//  }
-//
-//  void
-//  CompactRangeWorker::HandleOKCallback() {
-//    Nan::HandleScope scope;
-//
-//    v8::Local<v8::Value> argv[] = { Nan::Null() };
-//    callback->Call(1, argv);
-//  }
+
+  CompactRangeWorker::CompactRangeWorker(Database *database,
+                                         Nan::Callback *callback,
+                                         kudu::Slice start,
+                                         kudu::Slice end,
+                                         v8::Local<v8::Object> &startHandle,
+                                         v8::Local<v8::Object> &endHandle)
+      : AsyncWorker(database, callback) {
+    Nan::HandleScope scope;
+
+    rangeStart = start;
+    rangeEnd = end;
+
+    SaveToPersistent("compactStart", startHandle);
+    SaveToPersistent("compactEnd", endHandle);
+  }
+
+  CompactRangeWorker::~CompactRangeWorker() {
+  }
+
+  void
+  CompactRangeWorker::Execute() {
+    database->CompactRangeFromDatabase(&rangeStart, &rangeEnd);
+  }
+
+  void
+  CompactRangeWorker::WorkComplete() {
+    Nan::HandleScope scope;
+
+    DisposeStringOrBufferFromSlice(GetFromPersistent("compactStart"),
+                                   rangeStart);
+    DisposeStringOrBufferFromSlice(GetFromPersistent("compactEnd"), rangeEnd);
+    AsyncWorker::WorkComplete();
+  }
+
+  void
+  CompactRangeWorker::HandleOKCallback() {
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Value> argv[] = { Nan::Null() };
+    callback->Call(1, argv);
+  }
 
 }// namespace kududown

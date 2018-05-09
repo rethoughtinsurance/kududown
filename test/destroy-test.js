@@ -5,7 +5,7 @@ const test         = require('tape')
     , mkfiletree   = require('mkfiletree')
     , readfiletree = require('readfiletree')
     , rimraf       = require('rimraf')
-    , leveldown    = require('..')
+    , leveldown    = require('../ts/lib/kududown')
     , makeTest     = require('./make')
 
 test('test argument-less destroy() throws', function (t) {

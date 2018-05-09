@@ -2,9 +2,8 @@
 #include <node_buffer.h>
 #include <nan.h>
 
-#include "database.h"
-#include "batch_async.h"
 #include "batch.h"
+#include "batch_async.h"
 #include "common.h"
 
 namespace kududown {
@@ -12,24 +11,26 @@ namespace kududown {
   static Nan::Persistent<v8::FunctionTemplate> batch_constructor;
 
   Batch::Batch(kududown::Database* database, bool sync)
-      : database(database), hasData(false), batch(0) {
-    options = new WriteOptions();
+      : database(database), options(new WriteOptions),
+        batch(new WriteBatch), hasData(false) {
   }
 
   Batch::~Batch() {
-    delete options;
-    //delete batch;
+    if (options != 0)
+      delete options;
+    if (batch != 0)
+      delete batch;
   }
 
   kudu::Status
-  Batch::Write() {
+  Batch::WriteIt() {
     return database->WriteBatchToDatabase(options, batch);
   }
 
   void
   Batch::Init() {
-    const v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(
-        Batch::New);
+    const v8::Local<v8::FunctionTemplate> tpl =
+        Nan::New<v8::FunctionTemplate>(Batch::New);
     batch_constructor.Reset(tpl);
     tpl->SetClassName(Nan::New("Batch").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
@@ -39,7 +40,7 @@ namespace kududown {
     Nan::SetPrototypeMethod(tpl, "write", Batch::Write);
   }
 
-  NAN_METHOD(Batch::New){
+  NAN_METHOD(Batch::New) {
   Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
   v8::Local<v8::Object> optionsObj;
 
@@ -110,13 +111,13 @@ namespace kududown {
   v8::Local<v8::Function> callback; // purely for the error macros
 
   v8::Local<v8::Value> keyBuffer = info[0];
-  //LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+  LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
-//  batch->batch->Delete(key);
-//  if (!batch->hasData)
-//    batch->hasData = true;
+  batch->batch->Delete(key);
+  if (!batch->hasData)
+    batch->hasData = true;
 
-  //DisposeStringOrBufferFromSlice(keyBuffer, key);
+  DisposeStringOrBufferFromSlice(keyBuffer, key);
 
   info.GetReturnValue().Set(info.Holder());
 }
@@ -124,8 +125,8 @@ namespace kududown {
   NAN_METHOD(Batch::Clear){
   Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
-//  batch->batch->Clear();
-//  batch->hasData = false;
+  batch->batch->Clear();
+  batch->hasData = false;
 
   info.GetReturnValue().Set(info.Holder());
 }
@@ -135,7 +136,7 @@ Batch* batch = ObjectWrap::Unwrap<Batch>(info.Holder());
 
 if (batch->hasData) {
   Nan::Callback *callback =
-  new Nan::Callback(v8::Local<v8::Function>::Cast(info[0]));
+      new Nan::Callback(v8::Local<v8::Function>::Cast(info[0]));
   BatchWriteWorker* worker = new BatchWriteWorker(batch, callback);
   // persist to prevent accidental GC
   v8::Local<v8::Object> _this = info.This();
