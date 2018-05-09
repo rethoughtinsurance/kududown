@@ -3,7 +3,7 @@ import {KUDUDOWN_SCHEMA_TYPES} from './ts/kududown-schema-types';
 import {kuduDownSchemaAvscMap} from './ts/kududown-avsc-obj';
 import * as levelupTypes from './ts/levelup-types';
 
-console.log(`Top of index before kududown load`);
+// console.log(`Top of index before kududown load`);
 // Get the levelDOWN function for export, which should be exported as leveldown
 // The tests require the name `leveldown` but since consumers will use
 // both the real `leveldown` and this module this will not work. It means

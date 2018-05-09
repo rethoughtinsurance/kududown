@@ -14,7 +14,7 @@ function KuduDOWN (location) {
   AbstractKuduDOWN.call(this, location)
   this.binding = binding(location)
 }
-console.log('typeof KuduDOWN: ' + (typeof KuduDOWN))
+// console.log('typeof KuduDOWN: ' + (typeof KuduDOWN))
 util.inherits(KuduDOWN, AbstractKuduDOWN)
 
 
