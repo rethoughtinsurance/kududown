@@ -19,9 +19,12 @@
                'cflags_cc!': [ '-fno-rtti', '-fno-exceptions' ]
             ,  'cflags_cc': [ '--std=c++14' ]
             ,  "include_dirs"  : [
-                  "deps/kudu/linux/include"
+                  "deps/kudu/linux/include",
+                  "deps/kudu/linux/include/kudu"
                ]
-            , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/linux/lib', '-Wl,-lkudu_client' ]
+            , 'libraries': [ '-Wl,-rpath,<(module_root_dir)/deps/kudu/linux/lib',
+                '-Wl,-L,<(module_root_dir)/deps/kudu/linux/lib',
+                '-Wl,-lkudu_client' ]
           }]
         , ['OS == "mac"', {
               'cflags_cc': [ '--std=c++14' ]
